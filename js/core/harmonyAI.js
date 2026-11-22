@@ -341,4 +341,54 @@ export const HarmonyAI = {
 
     return { shapes: selectedShapes, transitions };
   },
+
+  /**
+   * Computes voice-leading transition metrics for any user-customized sequence of shapes.
+   */
+  analyzeTransitions(shapes, keyPc) {
+    const transitions = [];
+    const useFlats = Theory.useFlatsForRoot(keyPc);
+
+    for (let i = 1; i < shapes.length; i++) {
+      const prev = shapes[i - 1];
+      const next = shapes[i];
+      if (!prev || !next) continue;
+
+      const prevNotes = prev.stringNotes.filter((n) => !n.muted);
+      const nextNotes = next.stringNotes.filter((n) => !n.muted);
+      const prevPcs = new Set(prevNotes.map((n) => n.pc));
+      const nextPcs = new Set(nextNotes.map((n) => n.pc));
+      const commonNotes = [];
+      prevPcs.forEach((pc) => {
+        if (nextPcs.has(pc)) commonNotes.push(Theory.pcToNote(pc, useFlats));
+      });
+
+      const topPrev = prevNotes.slice(-4);
+      const topNext = nextNotes.slice(-4);
+      const count = Math.min(topPrev.length, topNext.length);
+      const movements = [];
+      let totalSemitones = 0;
+
+      for (let v = 0; v < count; v++) {
+        const delta = topNext[v].midi - topPrev[v].midi;
+        totalSemitones += Math.abs(delta);
+        movements.push({
+          from: topPrev[v].note,
+          to: topNext[v].note,
+          delta,
+          type: delta === 0 ? 'Nota Comum' : Math.abs(delta) <= 2 ? 'Grau Conjunto' : 'Salto',
+        });
+      }
+
+      transitions.push({
+        fromChord: prev.symbol,
+        toChord: next.symbol,
+        commonNotes,
+        movements,
+        smoothness: Math.max(40, Math.min(100, Math.round(100 - totalSemitones * 4))),
+      });
+    }
+
+    return transitions;
+  },
 };

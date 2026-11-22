@@ -1,7 +1,7 @@
 /**
  * Main Application Entry Point — Chord & Scale Library
- * Orchestrates modular routing, global tuning/audio/theme state,
- * Studio Rhythm Dock (Metronome + 16-Step Drum Machine), URL sharing & PWA.
+ * Orchestrates modular routing, Left-Handed mode, Global Search (Ctrl+K),
+ * Chromatic Tuner, Mobile Bottom Bar, Studio Rhythm Dock, URL sharing & PWA.
  */
 
 import { Theory } from './core/theory.js';
@@ -10,6 +10,9 @@ import { Storage } from './core/storage.js';
 import { AudioEngine } from './audio/audioEngine.js';
 import { RhythmEngine, DRUM_PRESETS } from './audio/rhythmEngine.js';
 import { ExportTools } from './ui/exportTools.js';
+import { icon } from './ui/icons.js';
+import { GlobalSearch } from './ui/globalSearch.js';
+import { TunerModal } from './ui/tunerModal.js';
 
 import { ModChords } from './modules/modChords.js';
 import { ModFretboard } from './modules/modFretboard.js';
@@ -41,22 +44,23 @@ const App = {
   studioOpen: false,
 
   async boot() {
+    this.hydrateShellIcons();
     await Theory.init();
 
-    // Restore saved user preferences
     const prefs = Storage.getPrefs();
     this.applyTheme(prefs.theme || 'dark');
     Theory.setTuning(prefs.tuning || 'standard');
+    Theory.leftHanded = Boolean(prefs.leftHanded);
     AudioEngine.setTone(prefs.guitarTone || 'acoustic');
     RhythmEngine.setBpm(prefs.bpm || 104);
 
-    // Populate tuning & tone selectors
     this.populateHeaderControls();
+    this.syncLeftHandedBtn();
     this.bindGlobalControls();
     this.initStudioDock();
     this.initPWA();
+    GlobalSearch.init(this);
 
-    // Check shared URL hash parameters
     const shared = ExportTools.parseShareState();
     if (shared && shared.m && MODULES[shared.m]) {
       if (shared.t) {
@@ -73,10 +77,53 @@ const App = {
     this.updateActiveNav();
   },
 
+  hydrateShellIcons() {
+    document.querySelectorAll('#sidebar-nav-list .nav-item').forEach((btn) => {
+      const ico = btn.querySelector('.nav-ico');
+      if (ico && btn.dataset.icon) ico.innerHTML = icon(btn.dataset.icon, 17);
+    });
+
+    document.querySelectorAll('#mobile-bottom-nav .mbn-item').forEach((btn) => {
+      const ico = btn.querySelector('.mbn-ico');
+      if (ico && btn.dataset.icon) ico.innerHTML = icon(btn.dataset.icon, 18);
+    });
+
+    const setHtml = (id, html) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    };
+
+    setHtml('btn-mobile-menu', icon('menu', 18));
+    setHtml('btn-global-search', `${icon('search', 14)}<span>Buscar</span><kbd class="kbd-chip">Ctrl+K</kbd>`);
+    setHtml('btn-tuner-open', `${icon('mic', 14)}<span>Afinador</span>`);
+    setHtml('btn-studio-toggle', `${icon('drum', 15)}<span>Ritmo</span>`);
+    setHtml('btn-lefthanded', icon('flipH', 16));
+    setHtml('btn-mute', icon('volumeOn', 16));
+    setHtml('btn-share-link', icon('share', 16));
+    setHtml('btn-theme-toggle', icon('sun', 16));
+    setHtml('btn-pwa-install', `${icon('download', 15)}<span>Instalar</span>`);
+    setHtml('studio-dock-title', `${icon('drum', 16)}<span>Estúdio de Ritmo</span>`);
+    setHtml('studio-metro-btn', `${icon('metronome', 15)}<span>Metrônomo</span>`);
+    setHtml('studio-drum-btn', `${icon('drum', 15)}<span>Bateria</span>`);
+    setHtml('studio-stop-btn', `${icon('stop', 14)}<span>Parar</span>`);
+    setHtml('btn-close-studio', icon('close', 15));
+  },
+
+  syncLeftHandedBtn() {
+    const btn = document.getElementById('btn-lefthanded');
+    if (btn) {
+      btn.classList.toggle('btn-gold-active', Theory.leftHanded);
+      btn.title = Theory.leftHanded ? 'Modo Canhoto ATIVO (clique para voltar ao Destro)' : 'Ativar Modo Canhoto (espelhar braço e diagramas)';
+    }
+  },
+
   applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     const btn = document.getElementById('btn-theme-toggle');
-    if (btn) btn.textContent = theme === 'dark' ? '☀ Light' : '☾ Dark';
+    if (btn) {
+      btn.innerHTML = theme === 'dark' ? icon('sun', 16) : icon('moon', 16);
+      btn.title = theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro';
+    }
     Storage.savePrefs({ theme });
   },
 
@@ -88,25 +135,40 @@ const App = {
         .join('');
     }
     const toneSel = document.getElementById('global-tone');
-    if (toneSel) {
-      toneSel.value = AudioEngine.tone;
-    }
+    if (toneSel) toneSel.value = AudioEngine.tone;
+  },
+
+  toggleMobileMenu(force = null) {
+    const sb = document.getElementById('app-sidebar');
+    const bd = document.getElementById('sidebar-backdrop');
+    const open = force !== null ? force : !sb?.classList.contains('open');
+    sb?.classList.toggle('open', open);
+    bd?.classList.toggle('open', open);
   },
 
   bindGlobalControls() {
-    // Sidebar & Mobile Navigation
     document.querySelectorAll('[data-nav]').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.navigate(btn.dataset.nav);
-        document.getElementById('app-sidebar')?.classList.remove('open');
+        this.toggleMobileMenu(false);
       });
     });
 
-    document.getElementById('btn-mobile-menu')?.addEventListener('click', () => {
-      document.getElementById('app-sidebar')?.classList.toggle('open');
+    document.getElementById('btn-mobile-menu')?.addEventListener('click', () => this.toggleMobileMenu());
+    document.getElementById('mbn-more-btn')?.addEventListener('click', () => this.toggleMobileMenu());
+    document.getElementById('sidebar-backdrop')?.addEventListener('click', () => this.toggleMobileMenu(false));
+
+    document.getElementById('btn-global-search')?.addEventListener('click', () => GlobalSearch.open());
+    document.getElementById('btn-tuner-open')?.addEventListener('click', () => TunerModal.open(() => this.renderCurrentModule()));
+
+    document.getElementById('btn-lefthanded')?.addEventListener('click', () => {
+      Theory.leftHanded = !Theory.leftHanded;
+      Storage.savePrefs({ leftHanded: Theory.leftHanded });
+      this.syncLeftHandedBtn();
+      this.toast(Theory.leftHanded ? 'Modo Canhoto ativado (braço e diagramas espelhados).' : 'Modo Destro restaurado.');
+      this.renderCurrentModule();
     });
 
-    // Global Tuning Change
     document.getElementById('global-tuning')?.addEventListener('change', (e) => {
       const tuning = Theory.setTuning(e.target.value);
       Storage.savePrefs({ tuning: tuning.id });
@@ -115,30 +177,25 @@ const App = {
       this.renderCurrentModule();
     });
 
-    // Guitar Tone Change
     document.getElementById('global-tone')?.addEventListener('change', (e) => {
       AudioEngine.setTone(e.target.value);
       Storage.savePrefs({ guitarTone: e.target.value });
-      // Audition quick harmonic chime
-      AudioEngine.playNote(52, 0.8);
-      AudioEngine.playNote(59, 0.8, 0.08);
-      AudioEngine.playNote(64, 1.0, 0.16);
+      AudioEngine.playNote(52, 0.7);
+      AudioEngine.playNote(59, 0.7, 0.08);
+      AudioEngine.playNote(64, 0.9, 0.16);
     });
 
-    // Theme Toggle
     document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme') || 'dark';
       this.applyTheme(cur === 'dark' ? 'light' : 'dark');
     });
 
-    // Mute Toggle
     document.getElementById('btn-mute')?.addEventListener('click', (e) => {
       const muted = AudioEngine.toggleMute();
-      e.currentTarget.textContent = muted ? '🔇 Mudo' : '🔊 Som';
+      e.currentTarget.innerHTML = muted ? icon('volumeOff', 16) : icon('volumeOn', 16);
       e.currentTarget.classList.toggle('btn-gold-active', muted);
     });
 
-    // Share Link
     document.getElementById('btn-share-link')?.addEventListener('click', async () => {
       const mod = MODULES[this.currentModuleId];
       const params = mod.getShareParams ? mod.getShareParams() : { m: this.currentModuleId };
@@ -147,7 +204,6 @@ const App = {
       this.toast(res.ok ? 'Link copiado para a área de transferência!' : 'URL atualizada na barra de endereço!');
     });
 
-    // Studio Rhythm Dock Toggle
     document.getElementById('btn-studio-toggle')?.addEventListener('click', () => {
       this.studioOpen = !this.studioOpen;
       document.getElementById('studio-dock')?.classList.toggle('open', this.studioOpen);
@@ -180,12 +236,7 @@ const App = {
 
     const renderGrid = () => {
       if (!gridEl) return;
-      const tracks = [
-        ['kick', 'Bumbo'],
-        ['snare', 'Caixa'],
-        ['hihat', 'Chimbal'],
-        ['ride', 'Ride/Prato'],
-      ];
+      const tracks = [['kick', 'Bumbo'], ['snare', 'Caixa'], ['hihat', 'Chimbal'], ['ride', 'Ride/Prato']];
       gridEl.innerHTML = tracks.map(([key, label]) => `
         <div class="drum-row">
           <span class="drum-label">${label}</span>
@@ -215,21 +266,9 @@ const App = {
     renderGrid();
     syncUi();
 
-    metroBtn?.addEventListener('click', () => {
-      RhythmEngine.toggleMetronome();
-      syncUi();
-    });
-
-    drumBtn?.addEventListener('click', () => {
-      RhythmEngine.toggleDrums();
-      syncUi();
-    });
-
-    stopBtn?.addEventListener('click', () => {
-      RhythmEngine.stop();
-      AudioEngine.stopSequence();
-      syncUi();
-    });
+    metroBtn?.addEventListener('click', () => { RhythmEngine.toggleMetronome(); syncUi(); });
+    drumBtn?.addEventListener('click', () => { RhythmEngine.toggleDrums(); syncUi(); });
+    stopBtn?.addEventListener('click', () => { RhythmEngine.stop(); AudioEngine.stopSequence(); syncUi(); });
 
     bpmRange?.addEventListener('input', (e) => {
       RhythmEngine.setBpm(Number(e.target.value));
@@ -255,14 +294,10 @@ const App = {
         const step = payload;
         if (ledsEl) {
           const activeBeat = step >= 0 ? Math.floor(step / 4) : -1;
-          ledsEl.querySelectorAll('.beat-led').forEach((led, idx) => {
-            led.classList.toggle('lit', idx === activeBeat);
-          });
+          ledsEl.querySelectorAll('.beat-led').forEach((led, idx) => led.classList.toggle('lit', idx === activeBeat));
         }
         if (gridEl) {
-          gridEl.querySelectorAll('.drum-step').forEach((el) => {
-            el.classList.toggle('current', Number(el.dataset.step) === step);
-          });
+          gridEl.querySelectorAll('.drum-step').forEach((el) => el.classList.toggle('current', Number(el.dataset.step) === step));
         }
       }
     });
@@ -288,7 +323,6 @@ const App = {
       installBtn.hidden = true;
     });
 
-    // Offline indicator
     const updateNet = () => {
       const badge = document.getElementById('offline-badge');
       if (badge) badge.hidden = navigator.onLine;
@@ -301,6 +335,11 @@ const App = {
   navigate(moduleId, externalOpts = null) {
     if (!MODULES[moduleId]) return;
     AudioEngine.stopSequence();
+    // Reset any playing flag on previous module cleanly
+    const prevMod = MODULES[this.currentModuleId];
+    if (prevMod && prevMod.state && 'isPlaying' in prevMod.state) {
+      prevMod.state.isPlaying = false;
+    }
     this.currentModuleId = moduleId;
     if (externalOpts && MODULES[moduleId].applyExternal) {
       MODULES[moduleId].applyExternal(externalOpts);
@@ -321,7 +360,6 @@ const App = {
     const mod = MODULES[this.currentModuleId];
     if (!stage || !mod) return;
     stage.classList.remove('fade-in');
-    // Force reflow for subtle transition
     void stage.offsetWidth;
     mod.render(stage, this);
     stage.classList.add('fade-in');
@@ -349,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
       stage.innerHTML = `
         <div class="card empty-state">
           <h3>Erro ao carregar os dados musicais</h3>
-          <p class="muted-text">Para carregar os arquivos JSON modulares, execute a aplicação através de um servidor local (ex: <code>npx serve .</code> ou <code>python -m http.server</code>).</p>
+          <p class="muted-text">Para carregar os arquivos JSON modulares, execute a aplicação através de um servidor local.</p>
         </div>
       `;
     }

@@ -1,7 +1,7 @@
 /**
  * Module 5: Arpeggios (Arpejos)
- * Automatically generates Maj7, m7, Dominant 7, Dim7, Aug, m7b5, Major & Minor triads
- * with Chord Diagrams, Full 24-Fret Neck, CAGED Shapes, and Shape-Linking Paths.
+ * SVG icons, inline BPM + Melodic Cadence controls, CAGED shapes,
+ * shape-linking connectors & reference chord diagrams.
  */
 
 import { Theory } from '../core/theory.js';
@@ -12,13 +12,15 @@ import { RhythmEngine } from '../audio/rhythmEngine.js';
 import { renderFretboard } from '../ui/fretboard.js';
 import { renderVerticalChordSVG } from '../ui/chordDiagram.js';
 import { ExportTools } from '../ui/exportTools.js';
+import { icon } from '../ui/icons.js';
+import { renderPlaybackControlsHTML, bindPlaybackControls } from '../ui/playbackBar.js';
 
 export const ModArpeggios = {
   id: 'arpeggios',
   state: {
-    rootPc: 0, // C
+    rootPc: 0,
     arpeggioId: 'maj7',
-    selectedShapeIdx: -1, // -1 = all shapes + links
+    selectedShapeIdx: -1,
     showLinks: true,
     displayMode: 'intervals',
     loopPlay: false,
@@ -42,16 +44,13 @@ export const ModArpeggios = {
 
   render(container, app) {
     const tuning = Theory.getTuning();
-    const data = ScaleEngine.getArpeggioShapes(this.state.rootPc, this.state.arpeggioId, tuning);
-    const { arpeggio, allPositions, shapes, links } = data;
+    const { arpeggio, allPositions, shapes, links } = ScaleEngine.getArpeggioShapes(this.state.rootPc, this.state.arpeggioId, tuning);
 
     const useFlats = Theory.useFlatsForRoot(this.state.rootPc);
     const rootName = Theory.pcToNote(this.state.rootPc, useFlats);
     const title = `${rootName}${arpeggio.symbol}`;
 
-    // Related chord diagrams for the arpeggio
     const chordVoicings = ChordEngine.getVoicings(this.state.rootPc, arpeggio.id, tuning).slice(0, 4);
-
     const activeShape = this.state.selectedShapeIdx >= 0 ? shapes[this.state.selectedShapeIdx] : null;
     const displayPositions = activeShape ? activeShape.notes : allPositions;
     const activeLinks = this.state.showLinks
@@ -63,18 +62,18 @@ export const ModArpeggios = {
     container.innerHTML = `
       <div class="module-header">
         <div>
-          <h2 class="module-title">Arpejos & Ligação entre Shapes</h2>
-          <p class="module-subtitle">Visualize tétrades e tríades pelo braço inteiro com <strong>conexões visuais entre shapes CAGED</strong> para solos fluidos.</p>
+          <h2 class="module-title">Arpejos &amp; Ligações CAGED</h2>
+          <p class="module-subtitle">Visualize tétrades e tríades no braço completo com caminhos de transição entre shapes adjacentes.</p>
         </div>
         <div class="action-bar">
-          <button id="arp-play" class="btn btn-primary">${this.state.isPlaying ? '■ Parar' : '▶ Tocar Arpejo'}</button>
-          <button id="arp-loop" class="btn ${this.state.loopPlay ? 'btn-gold-active' : 'btn-ghost'} btn-sm">🔁 Loop</button>
-          <button id="arp-png" class="btn btn-ghost btn-sm">PNG</button>
+          <button id="arp-play" class="btn btn-primary">${icon(this.state.isPlaying ? 'stop' : 'play', 14)} ${this.state.isPlaying ? 'Parar' : 'Tocar Arpejo'}</button>
+          <button id="arp-loop" class="btn ${this.state.loopPlay ? 'btn-gold-active' : 'btn-ghost'} btn-sm">${icon('repeat', 14)} Loop</button>
+          <button id="arp-png" class="btn btn-ghost btn-sm">${icon('image', 14)} PNG</button>
         </div>
       </div>
 
       <section class="card selector-card">
-        <div class="selector-row">
+        <div class="selector-row" style="margin-bottom:10px;">
           <div class="selector-group">
             <label class="field-label">Tônica</label>
             <div class="pill-grid root-pills">
@@ -83,24 +82,25 @@ export const ModArpeggios = {
               `).join('')}
             </div>
           </div>
-          <div class="selector-group">
-            <label class="field-label">Tipo de Arpejo</label>
-            <div class="pill-wrap">
-              ${Theory.getArpeggios().map((a) => `
-                <button class="pill-btn pill-sm ${a.id === this.state.arpeggioId ? 'active' : ''}" data-arp-id="${a.id}">${a.name}</button>
-              `).join('')}
-            </div>
+        </div>
+        <div class="selector-group" style="margin-bottom:12px;">
+          <label class="field-label">Tipo de Arpejo</label>
+          <div class="pill-wrap">
+            ${Theory.getArpeggios().map((a) => `
+              <button class="pill-btn pill-sm ${a.id === this.state.arpeggioId ? 'active' : ''}" data-arp-id="${a.id}">${a.name}</button>
+            `).join('')}
           </div>
         </div>
+
+        ${renderPlaybackControlsHTML({ mode: 'melodic', bpm: RhythmEngine.bpm, cadence: AudioEngine.melodicCadence, idPrefix: 'arp-pb' })}
       </section>
 
-      <!-- Full Fretboard + Shape Linking -->
       <section class="card">
         <div class="controls-split">
           <div>
-            <h3 class="section-title" style="margin-bottom:6px;">${title} · <code class="mono-text">${arpeggio.formula}</code></h3>
+            <h3 class="section-title" style="margin-bottom:8px;">${title} · <code class="mono-text">${arpeggio.formula}</code></h3>
             <div class="pill-wrap">
-              <button class="pill-btn pill-sm ${this.state.selectedShapeIdx === -1 ? 'active' : ''}" data-arp-sh="-1">Braço Completo + Ligações</button>
+              <button class="pill-btn pill-sm ${this.state.selectedShapeIdx === -1 ? 'active' : ''}" data-arp-sh="-1">Todos os Shapes</button>
               ${shapes.map((sh, idx) => `
                 <button class="pill-btn pill-sm ${idx === this.state.selectedShapeIdx ? 'active' : ''}" data-arp-sh="${idx}">
                   ${sh.name} (${sh.startFret}–${sh.endFret})
@@ -109,7 +109,7 @@ export const ModArpeggios = {
             </div>
           </div>
           <div class="action-bar">
-            <button id="arp-toggle-links" class="btn ${this.state.showLinks ? 'btn-gold-active' : 'btn-ghost'} btn-sm">⟷ Ligação entre Shapes</button>
+            <button id="arp-toggle-links" class="btn ${this.state.showLinks ? 'btn-gold-active' : 'btn-ghost'} btn-sm">${icon('link', 14)} Ligações</button>
             <button class="pill-btn pill-xs ${this.state.displayMode === 'notes' ? 'active' : ''}" data-arp-disp="notes">Notas</button>
             <button class="pill-btn pill-xs ${this.state.displayMode === 'intervals' ? 'active' : ''}" data-arp-disp="intervals">Intervalos</button>
           </div>
@@ -117,38 +117,36 @@ export const ModArpeggios = {
 
         <div class="fretboard-scroll" id="arp-fretboard-mount"></div>
 
-        <!-- Shape Linking Guide Cards -->
         <div class="links-grid">
           ${links.map((lk) => `
             <div class="subcard link-card">
               <div class="link-head">
                 <span class="caged-dot" style="background:${Theory.getCagedColor(lk.fromShape)}">${lk.fromShape}</span>
-                <span class="link-arrow">⟷</span>
+                ${icon('arrowRight', 13, 'text-gold')}
                 <span class="caged-dot" style="background:${Theory.getCagedColor(lk.toShape)}">${lk.toShape}</span>
-                <strong>Conexão ${lk.fromShape} → ${lk.toShape}</strong>
+                <strong>Transição ${lk.fromShape} → ${lk.toShape}</strong>
               </div>
               <p class="small muted-text">
                 ${lk.slides.length
-                  ? lk.slides.map((sl) => `Corda ${tuning.strings - sl.from.stringIdx}: <code>${sl.from.fret}→${sl.to.fret}</code> (${sl.from.note}→${sl.to.note})`).join(' · ')
-                  : `${lk.sharedNotes.length} notas pivô compartilhadas na divisa`}
+                  ? lk.slides.map((sl) => `C${tuning.strings - sl.from.stringIdx}: <code>${sl.from.fret}→${sl.to.fret}</code>`).join(' · ')
+                  : `${lk.sharedNotes.length} notas pivô em comum`}
               </p>
             </div>
           `).join('')}
         </div>
       </section>
 
-      <!-- Reference Voicing Diagrams -->
       <section class="card">
-        <h3 class="section-title">Diagramas de Acorde do Arpejo ${title}</h3>
+        <h3 class="section-title" style="margin-bottom:12px;">Diagramas de Referência (${title})</h3>
         <div class="shapes-gallery">
           ${chordVoicings.map((v, i) => `
-            <div class="shape-thumb arp-diagram-play" data-voicing-i="${i}" style="cursor:pointer;">
+            <div class="shape-thumb arp-diagram-play" data-voicing-i="${i}">
               <div class="thumb-head">
                 <span class="thumb-num">${v.label}</span>
                 ${v.caged ? `<span class="caged-dot" style="background:${Theory.getCagedColor(v.caged)}">${v.caged}</span>` : ''}
               </div>
               ${renderVerticalChordSVG(v, { compact: true })}
-              <div class="thumb-foot">Clique para arpejar ▶</div>
+              <div class="thumb-foot icon-label-center">${icon('play', 11)} Ouvir arpejo</div>
             </div>
           `).join('')}
         </div>
@@ -171,6 +169,8 @@ export const ModArpeggios = {
   },
 
   bindEvents(container, app, arpeggio, activeShape, chordVoicings, title) {
+    bindPlaybackControls(container, { mode: 'melodic', idPrefix: 'arp-pb' });
+
     container.querySelectorAll('[data-arp-root]').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.state.rootPc = Number(btn.dataset.arpRoot);
@@ -216,7 +216,6 @@ export const ModArpeggios = {
         this.render(container, app);
         return;
       }
-
       let midis;
       if (activeShape && activeShape.notes.length) {
         midis = [...new Set(activeShape.notes.map((n) => n.midi))].sort((a, b) => a - b);
@@ -228,18 +227,17 @@ export const ModArpeggios = {
           base + 24,
         ];
       }
-
       this.state.isPlaying = true;
       this.render(container, app);
       AudioEngine.playSequence(midis, {
         bpm: RhythmEngine.bpm,
         subdivision: 3,
-        ascendingAndDescending: true,
+        cadence: AudioEngine.melodicCadence,
         loop: this.state.loopPlay,
         onEnd: () => {
           this.state.isPlaying = false;
           const b = container.querySelector('#arp-play');
-          if (b) b.textContent = '▶ Tocar Arpejo';
+          if (b) b.innerHTML = `${icon('play', 14)} Tocar Arpejo`;
         },
       });
     });
@@ -247,9 +245,7 @@ export const ModArpeggios = {
     container.querySelectorAll('.arp-diagram-play').forEach((card) => {
       card.addEventListener('click', () => {
         const v = chordVoicings[Number(card.dataset.voicingI)];
-        if (v) {
-          AudioEngine.playChord(v.stringNotes.filter((n) => !n.muted).map((n) => n.midi), { arpeggiate: true, duration: 2.0 });
-        }
+        if (v) AudioEngine.playChord(v.stringNotes.filter((n) => !n.muted).map((n) => n.midi), { arpeggiate: true, duration: 2.0 });
       });
     });
 

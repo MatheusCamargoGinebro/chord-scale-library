@@ -1,21 +1,23 @@
 /**
  * Module 6: Musical Comparator (Comparador)
- * Compares Scale vs Scale, Scale vs Arpeggio, or Chord vs Scale.
- * Highlights Shared Notes, Different Notes, and Exclusive Intervals on the full fretboard.
+ * Clean SVG icons, inline BPM + Cadence playback, dual comparison selectors & fretboard overlay.
  */
 
 import { Theory } from '../core/theory.js';
 import { ScaleEngine } from '../core/scaleEngine.js';
 import { AudioEngine } from '../audio/audioEngine.js';
+import { RhythmEngine } from '../audio/rhythmEngine.js';
 import { renderFretboard } from '../ui/fretboard.js';
+import { icon } from '../ui/icons.js';
+import { renderPlaybackControlsHTML, bindPlaybackControls } from '../ui/playbackBar.js';
 
 export const ModComparator = {
   id: 'comparator',
   state: {
-    mode: 'scale_scale', // 'scale_scale' | 'scale_arp' | 'chord_scale'
-    rootA: 9, // A
+    mode: 'scale_scale',
+    rootA: 9,
     idA: 'dorian',
-    rootB: 9, // A
+    rootB: 9,
     idB: 'pentatonic_minor',
     displayMode: 'notes',
   },
@@ -37,20 +39,10 @@ export const ModComparator = {
     const rName = Theory.pcToNote(this.state.rootA, useFlats);
     if (this.state.mode === 'chord_scale') {
       const ct = Theory.getChordType(this.state.idA);
-      return {
-        label: `Acorde ${rName}${ct.symbol}`,
-        rootPc: this.state.rootA,
-        intervals: ct.intervals,
-        formula: ct.formula,
-      };
+      return { label: `Acorde ${rName}${ct.symbol}`, rootPc: this.state.rootA, intervals: ct.intervals, formula: ct.formula };
     }
     const sc = Theory.getScale(this.state.idA);
-    return {
-      label: `Escala ${rName} ${sc.name}`,
-      rootPc: this.state.rootA,
-      intervals: sc.intervals,
-      formula: sc.formula,
-    };
+    return { label: `Escala ${rName} ${sc.name}`, rootPc: this.state.rootA, intervals: sc.intervals, formula: sc.formula };
   },
 
   getSetB() {
@@ -58,20 +50,10 @@ export const ModComparator = {
     const rName = Theory.pcToNote(this.state.rootB, useFlats);
     if (this.state.mode === 'scale_arp') {
       const arp = Theory.getArpeggio(this.state.idB);
-      return {
-        label: `Arpejo ${rName}${arp.symbol}`,
-        rootPc: this.state.rootB,
-        intervals: arp.intervals,
-        formula: arp.formula,
-      };
+      return { label: `Arpejo ${rName}${arp.symbol}`, rootPc: this.state.rootB, intervals: arp.intervals, formula: arp.formula };
     }
     const sc = Theory.getScale(this.state.idB);
-    return {
-      label: `Escala ${rName} ${sc.name}`,
-      rootPc: this.state.rootB,
-      intervals: sc.intervals,
-      formula: sc.formula,
-    };
+    return { label: `Escala ${rName} ${sc.name}`, rootPc: this.state.rootB, intervals: sc.intervals, formula: sc.formula };
   },
 
   render(container, app) {
@@ -84,7 +66,6 @@ export const ModComparator = {
     const onlyAPcs = new Set(comp.onlyA.map((x) => x.pc));
     const onlyBPcs = new Set(comp.onlyB.map((x) => x.pc));
 
-    // Build combined fretboard positions with distinct colors
     const positions = [];
     const useFlats = Theory.useFlatsForRoot(setA.rootPc);
     for (let s = 0; s < tuning.strings; s++) {
@@ -95,28 +76,18 @@ export const ModComparator = {
         let isRoot = false;
         let short = '';
         if (sharedPcs.has(pc)) {
-          customColor = '#10b981'; // Emerald = common
+          customColor = '#10b981';
           isRoot = pc === setA.rootPc;
           short = Theory.getIntervalInfo(Theory.mod12(pc - setA.rootPc)).short;
         } else if (onlyAPcs.has(pc)) {
-          customColor = '#f59e0b'; // Amber = only A
+          customColor = '#f59e0b';
           short = Theory.getIntervalInfo(Theory.mod12(pc - setA.rootPc)).short;
         } else if (onlyBPcs.has(pc)) {
-          customColor = '#38bdf8'; // Cyan = only B
+          customColor = '#38bdf8';
           short = Theory.getIntervalInfo(Theory.mod12(pc - setB.rootPc)).short;
         }
         if (customColor) {
-          positions.push({
-            stringIdx: s,
-            fret: f,
-            midi,
-            pc,
-            note: Theory.pcToNote(pc, useFlats),
-            short,
-            degree: short,
-            customColor,
-            isRoot,
-          });
+          positions.push({ stringIdx: s, fret: f, midi, pc, note: Theory.pcToNote(pc, useFlats), short, degree: short, customColor, isRoot });
         }
       }
     }
@@ -125,25 +96,24 @@ export const ModComparator = {
       <div class="module-header">
         <div>
           <h2 class="module-title">Comparador Musical</h2>
-          <p class="module-subtitle">Sobrepõe escalas, arpejos e acordes para revelar <strong>notas em comum, diferenças e intervalos exclusivos</strong>.</p>
+          <p class="module-subtitle">Sobrepõe escalas, arpejos e acordes para visualizar notas em comum e intervalos exclusivos.</p>
         </div>
-        <div class="pill-wrap">
-          <button class="pill-btn pill-sm ${this.state.mode === 'scale_scale' ? 'active' : ''}" data-cm="scale_scale">Escala vs Escala</button>
-          <button class="pill-btn pill-sm ${this.state.mode === 'scale_arp' ? 'active' : ''}" data-cm="scale_arp">Escala vs Arpejo</button>
-          <button class="pill-btn pill-sm ${this.state.mode === 'chord_scale' ? 'active' : ''}" data-cm="chord_scale">Acorde vs Escala</button>
+        <div class="segmented-tabs compact">
+          <button class="seg-tab ${this.state.mode === 'scale_scale' ? 'active' : ''}" data-cm="scale_scale">Escala vs Escala</button>
+          <button class="seg-tab ${this.state.mode === 'scale_arp' ? 'active' : ''}" data-cm="scale_arp">Escala vs Arpejo</button>
+          <button class="seg-tab ${this.state.mode === 'chord_scale' ? 'active' : ''}" data-cm="chord_scale">Acorde vs Escala</button>
         </div>
       </div>
 
-      <!-- Dual Selectors -->
       <section class="card">
         <div class="compare-selectors">
           <div class="subcard comp-box-a">
-            <div class="comp-tag" style="color:#f59e0b">● ELEMENTO A (${this.state.mode === 'chord_scale' ? 'Acorde' : 'Escala'})</div>
+            <div class="comp-tag" style="color:#f59e0b">ELEMENTO A (${this.state.mode === 'chord_scale' ? 'Acorde' : 'Escala'})</div>
             <div class="inline-pair">
-              <select id="comp-root-a" class="select-control">
+              <select id="comp-root-a" class="select-control select-sm">
                 ${Theory.getAllRoots().map((r) => `<option value="${r.pc}" ${r.pc === this.state.rootA ? 'selected' : ''}>${r.label}</option>`).join('')}
               </select>
-              <select id="comp-id-a" class="select-control">
+              <select id="comp-id-a" class="select-control select-sm">
                 ${(this.state.mode === 'chord_scale' ? Theory.getChordTypes() : Theory.getScales()).map((item) => `
                   <option value="${item.id}" ${item.id === this.state.idA ? 'selected' : ''}>${item.name}</option>
                 `).join('')}
@@ -151,7 +121,7 @@ export const ModComparator = {
             </div>
             <div class="comp-meta">
               <code>${setA.formula}</code>
-              <button id="comp-play-a" class="btn btn-ghost btn-xs">▶ Ouvir A</button>
+              <button id="comp-play-a" class="btn btn-ghost btn-xs">${icon('play', 12)} Ouvir A</button>
             </div>
           </div>
 
@@ -163,12 +133,12 @@ export const ModComparator = {
           </div>
 
           <div class="subcard comp-box-b">
-            <div class="comp-tag" style="color:#38bdf8">● ELEMENTO B (${this.state.mode === 'scale_arp' ? 'Arpejo' : 'Escala'})</div>
+            <div class="comp-tag" style="color:#38bdf8">ELEMENTO B (${this.state.mode === 'scale_arp' ? 'Arpejo' : 'Escala'})</div>
             <div class="inline-pair">
-              <select id="comp-root-b" class="select-control">
+              <select id="comp-root-b" class="select-control select-sm">
                 ${Theory.getAllRoots().map((r) => `<option value="${r.pc}" ${r.pc === this.state.rootB ? 'selected' : ''}>${r.label}</option>`).join('')}
               </select>
-              <select id="comp-id-b" class="select-control">
+              <select id="comp-id-b" class="select-control select-sm">
                 ${(this.state.mode === 'scale_arp' ? Theory.getArpeggios() : Theory.getScales()).map((item) => `
                   <option value="${item.id}" ${item.id === this.state.idB ? 'selected' : ''}>${item.name}</option>
                 `).join('')}
@@ -176,17 +146,20 @@ export const ModComparator = {
             </div>
             <div class="comp-meta">
               <code>${setB.formula}</code>
-              <button id="comp-play-b" class="btn btn-ghost btn-xs">▶ Ouvir B</button>
+              <button id="comp-play-b" class="btn btn-ghost btn-xs">${icon('play', 12)} Ouvir B</button>
             </div>
           </div>
         </div>
+
+        <div style="margin-top:12px;">
+          ${renderPlaybackControlsHTML({ mode: 'melodic', bpm: RhythmEngine.bpm, cadence: AudioEngine.melodicCadence, idPrefix: 'cmp-pb' })}
+        </div>
       </section>
 
-      <!-- Analytical Breakdown -->
       <section class="card">
         <div class="compare-results-grid">
-          <div class="subcard res-shared">
-            <h4 class="subcard-title" style="color:#10b981">✓ Notas Iguais (${comp.shared.length})</h4>
+          <div class="subcard">
+            <h4 class="subcard-title icon-label" style="color:#10b981">${icon('check', 14)} Notas Iguais (${comp.shared.length})</h4>
             <div class="pill-wrap">
               ${comp.shared.length
                 ? comp.shared.map((n) => `<span class="note-pill" style="background:#10b98122;color:#10b981;border-color:#10b98155">${n.note} <small>${n.intervalA}/${n.intervalB}</small></span>`).join('')
@@ -194,31 +167,30 @@ export const ModComparator = {
             </div>
           </div>
 
-          <div class="subcard res-only-a">
-            <h4 class="subcard-title" style="color:#f59e0b">◆ Exclusivas de A (${comp.onlyA.length})</h4>
+          <div class="subcard">
+            <h4 class="subcard-title" style="color:#f59e0b">Exclusivas de A (${comp.onlyA.length})</h4>
             <div class="pill-wrap">
               ${comp.onlyA.length
                 ? comp.onlyA.map((n) => `<span class="note-pill" style="background:#f59e0b22;color:#f59e0b;border-color:#f59e0b55">${n.note} <small>${n.intervalA}</small></span>`).join('')
-                : '<span class="muted-text small">Todas as notas de A estão em B!</span>'}
+                : '<span class="muted-text small">Todas as notas de A estão em B</span>'}
             </div>
           </div>
 
-          <div class="subcard res-only-b">
-            <h4 class="subcard-title" style="color:#38bdf8">◆ Exclusivas de B (${comp.onlyB.length})</h4>
+          <div class="subcard">
+            <h4 class="subcard-title" style="color:#38bdf8">Exclusivas de B (${comp.onlyB.length})</h4>
             <div class="pill-wrap">
               ${comp.onlyB.length
                 ? comp.onlyB.map((n) => `<span class="note-pill" style="background:#38bdf822;color:#38bdf8;border-color:#38bdf855">${n.note} <small>${n.intervalB}</small></span>`).join('')
-                : '<span class="muted-text small">B está 100% contido em A!</span>'}
+                : '<span class="muted-text small">B está 100% contido em A</span>'}
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Combined Fretboard -->
       <section class="card">
         <div class="card-header-row">
           <div>
-            <h3 class="section-title">Sobreposição no Braço: ${setA.label} × ${setB.label}</h3>
+            <h3 class="section-title">${setA.label} × ${setB.label}</h3>
             <div class="legend-items" style="margin-top:6px;">
               <span class="legend-dot"><i style="background:#10b981"></i> Em comum (${comp.shared.length})</span>
               <span class="legend-dot"><i style="background:#f59e0b"></i> Exclusivas de A (${comp.onlyA.length})</span>
@@ -248,6 +220,8 @@ export const ModComparator = {
   },
 
   bindEvents(container, app, setA, setB) {
+    bindPlaybackControls(container, { mode: 'melodic', idPrefix: 'cmp-pb' });
+
     container.querySelectorAll('[data-cm]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const nextMode = btn.dataset.cm;
@@ -266,39 +240,24 @@ export const ModComparator = {
       });
     });
 
-    container.querySelector('#comp-root-a')?.addEventListener('change', (e) => {
-      this.state.rootA = Number(e.target.value);
-      this.render(container, app);
-    });
-    container.querySelector('#comp-id-a')?.addEventListener('change', (e) => {
-      this.state.idA = e.target.value;
-      this.render(container, app);
-    });
-    container.querySelector('#comp-root-b')?.addEventListener('change', (e) => {
-      this.state.rootB = Number(e.target.value);
-      this.render(container, app);
-    });
-    container.querySelector('#comp-id-b')?.addEventListener('change', (e) => {
-      this.state.idB = e.target.value;
-      this.render(container, app);
-    });
+    container.querySelector('#comp-root-a')?.addEventListener('change', (e) => { this.state.rootA = Number(e.target.value); this.render(container, app); });
+    container.querySelector('#comp-id-a')?.addEventListener('change', (e) => { this.state.idA = e.target.value; this.render(container, app); });
+    container.querySelector('#comp-root-b')?.addEventListener('change', (e) => { this.state.rootB = Number(e.target.value); this.render(container, app); });
+    container.querySelector('#comp-id-b')?.addEventListener('change', (e) => { this.state.idB = e.target.value; this.render(container, app); });
 
     container.querySelectorAll('[data-cdisp]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.state.displayMode = btn.dataset.cdisp;
-        this.render(container, app);
-      });
+      btn.addEventListener('click', () => { this.state.displayMode = btn.dataset.cdisp; this.render(container, app); });
     });
 
     container.querySelector('#comp-play-a')?.addEventListener('click', () => {
       const midis = setA.intervals.map((iv) => 48 + setA.rootPc + iv);
-      if (this.state.mode === 'chord_scale') AudioEngine.playChord(midis, { strumMs: 30 });
-      else AudioEngine.playSequence([...midis, 60 + setA.rootPc], { bpm: 120, subdivision: 2 });
+      if (this.state.mode === 'chord_scale') AudioEngine.playChordWithCadence(midis, { bpm: RhythmEngine.bpm, cadence: AudioEngine.chordCadence });
+      else AudioEngine.playSequence([...midis, 60 + setA.rootPc], { bpm: RhythmEngine.bpm, subdivision: 2, cadence: AudioEngine.melodicCadence });
     });
 
     container.querySelector('#comp-play-b')?.addEventListener('click', () => {
       const midis = setB.intervals.map((iv) => 48 + setB.rootPc + iv);
-      AudioEngine.playSequence([...midis, 60 + setB.rootPc], { bpm: 120, subdivision: 2 });
+      AudioEngine.playSequence([...midis, 60 + setB.rootPc], { bpm: RhythmEngine.bpm, subdivision: 2, cadence: AudioEngine.melodicCadence });
     });
   },
 };

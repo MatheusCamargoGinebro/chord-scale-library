@@ -1,8 +1,10 @@
 /**
- * Service Worker — Offline-First PWA Support for Chord & Scale Library
+ * Service Worker — Network-First with Offline Cache Fallback
+ * Always serves the latest HTML/CSS/JS when online (preventing stale UI/CSS issues),
+ * and falls back seamlessly to cached assets when offline.
  */
 
-const CACHE_NAME = 'chord-scale-library-v1';
+const CACHE_NAME = 'chord-scale-library-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -24,6 +26,11 @@ const ASSETS = [
   './js/core/storage.js',
   './js/audio/audioEngine.js',
   './js/audio/rhythmEngine.js',
+  './js/ui/icons.js',
+  './js/ui/playbackBar.js',
+  './js/ui/strummingEditor.js',
+  './js/ui/globalSearch.js',
+  './js/ui/tunerModal.js',
   './js/ui/fretboard.js',
   './js/ui/chordDiagram.js',
   './js/ui/circleOfFifths.js',
@@ -57,17 +64,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === 'basic') {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match('./index.html'));
-    })
+    fetch(event.request)
+      .then((res) => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
   );
 });

@@ -1,6 +1,6 @@
 /**
  * Module 9: Favorites Hub (Favoritos)
- * Manages saved Chords, Scales, Progressions, and Shapes stored in localStorage.
+ * Clean SVG icons, categorized tabs & quick playback for saved Chords, Scales, Progressions & Shapes.
  */
 
 import { Theory } from '../core/theory.js';
@@ -8,11 +8,12 @@ import { ChordEngine } from '../core/chordEngine.js';
 import { Storage } from '../core/storage.js';
 import { AudioEngine } from '../audio/audioEngine.js';
 import { renderVerticalChordSVG } from '../ui/chordDiagram.js';
+import { icon } from '../ui/icons.js';
 
 export const ModFavorites = {
   id: 'favorites',
   state: {
-    tab: 'all', // 'all' | 'chords' | 'scales' | 'progressions' | 'shapes'
+    tab: 'all',
   },
 
   render(container, app) {
@@ -24,38 +25,37 @@ export const ModFavorites = {
       shapes: favs.shapes.length,
     };
     const total = counts.chords + counts.scales + counts.progressions + counts.shapes;
-
     const showCat = (cat) => this.state.tab === 'all' || this.state.tab === cat;
 
     container.innerHTML = `
       <div class="module-header">
         <div>
           <h2 class="module-title">Meus Favoritos</h2>
-          <p class="module-subtitle">Seus acordes, escalas, progressões e shapes salvos localmente para acesso instantâneo offline.</p>
+          <p class="module-subtitle">Acesse rapidamente seus acordes, escalas, progressões e shapes salvos offline.</p>
         </div>
-        <div class="pill-wrap">
-          <button class="pill-btn pill-sm ${this.state.tab === 'all' ? 'active' : ''}" data-ftab="all">Todos (${total})</button>
-          <button class="pill-btn pill-sm ${this.state.tab === 'chords' ? 'active' : ''}" data-ftab="chords">Acordes (${counts.chords})</button>
-          <button class="pill-btn pill-sm ${this.state.tab === 'scales' ? 'active' : ''}" data-ftab="scales">Escalas (${counts.scales})</button>
-          <button class="pill-btn pill-sm ${this.state.tab === 'progressions' ? 'active' : ''}" data-ftab="progressions">Progressões (${counts.progressions})</button>
-          <button class="pill-btn pill-sm ${this.state.tab === 'shapes' ? 'active' : ''}" data-ftab="shapes">Shapes (${counts.shapes})</button>
+        <div class="segmented-tabs compact">
+          <button class="seg-tab ${this.state.tab === 'all' ? 'active' : ''}" data-ftab="all">Todos (${total})</button>
+          <button class="seg-tab ${this.state.tab === 'chords' ? 'active' : ''}" data-ftab="chords">Acordes (${counts.chords})</button>
+          <button class="seg-tab ${this.state.tab === 'scales' ? 'active' : ''}" data-ftab="scales">Escalas (${counts.scales})</button>
+          <button class="seg-tab ${this.state.tab === 'progressions' ? 'active' : ''}" data-ftab="progressions">Progressões (${counts.progressions})</button>
+          <button class="seg-tab ${this.state.tab === 'shapes' ? 'active' : ''}" data-ftab="shapes">Shapes (${counts.shapes})</button>
         </div>
       </div>
 
       ${total === 0 ? `
         <section class="card empty-state">
-          <h3>Sua coleção de favoritos está vazia</h3>
-          <p class="muted-text">Clique em <strong>☆ Favoritar</strong> em qualquer acorde, escala, progressão ou shape para montar seu caderno de estudos.</p>
+          <h3>Sua lista de favoritos está vazia</h3>
+          <p class="muted-text">Use o ícone de estrela em qualquer acorde, escala, progressão ou shape para salvar aqui.</p>
           <div class="action-bar" style="justify-content:center;margin-top:14px;">
-            <button class="btn btn-primary fav-goto" data-mod="chords">Explorar Acordes</button>
-            <button class="btn btn-secondary fav-goto" data-mod="scales">Explorar Escalas</button>
+            <button class="btn btn-primary fav-goto" data-mod="chords">${icon('guitar', 15)} Explorar Acordes</button>
+            <button class="btn btn-secondary fav-goto" data-mod="scales">${icon('scales', 15)} Explorar Escalas</button>
           </div>
         </section>
       ` : ''}
 
       ${showCat('chords') && favs.chords.length ? `
         <section class="card">
-          <h3 class="section-title">Acordes Favoritos (${favs.chords.length})</h3>
+          <h3 class="section-title" style="margin-bottom:12px;">Acordes Favoritos (${favs.chords.length})</h3>
           <div class="fav-grid">
             ${favs.chords.map((c) => `
               <div class="subcard fav-card">
@@ -65,9 +65,9 @@ export const ModFavorites = {
                 </div>
                 <p class="muted-text small">${c.subtitle}</p>
                 <div class="fav-actions">
-                  <button class="btn btn-ghost btn-xs fav-play-chord" data-r="${c.rootPc}" data-ct="${c.chordTypeId}">▶ Ouvir</button>
+                  <button class="btn btn-ghost btn-xs fav-play-chord" data-r="${c.rootPc}" data-ct="${c.chordTypeId}">${icon('play', 12)} Ouvir</button>
                   <button class="btn btn-secondary btn-xs fav-open-chord" data-r="${c.rootPc}" data-ct="${c.chordTypeId}">Abrir</button>
-                  <button class="btn btn-ghost btn-xs text-red fav-rm" data-cat="chords" data-id="${c.id}">✕</button>
+                  <button class="btn btn-ghost btn-icon-xs text-red fav-rm" data-cat="chords" data-id="${c.id}" aria-label="Remover">${icon('trash', 12)}</button>
                 </div>
               </div>
             `).join('')}
@@ -77,7 +77,7 @@ export const ModFavorites = {
 
       ${showCat('shapes') && favs.shapes.length ? `
         <section class="card">
-          <h3 class="section-title">Shapes Salvos (${favs.shapes.length})</h3>
+          <h3 class="section-title" style="margin-bottom:12px;">Shapes Salvos (${favs.shapes.length})</h3>
           <div class="shapes-gallery">
             ${favs.shapes.map((sh) => {
               const analyzed = ChordEngine.analyzeVoicing(sh.frets, sh.rootPc, Theory.getChordType(sh.chordTypeId), Theory.getTuning());
@@ -85,11 +85,11 @@ export const ModFavorites = {
                 <div class="shape-thumb fav-shape-card">
                   <div class="thumb-head">
                     <span class="thumb-num">${sh.title}</span>
-                    <button class="btn btn-ghost btn-xs text-red fav-rm" data-cat="shapes" data-id="${sh.id}">✕</button>
+                    <button class="btn btn-ghost btn-icon-xs text-red fav-rm" data-cat="shapes" data-id="${sh.id}" aria-label="Remover">${icon('close', 12)}</button>
                   </div>
                   ${analyzed ? renderVerticalChordSVG(analyzed, { compact: true }) : `<p class="small">${sh.subtitle}</p>`}
                   <div class="fav-actions" style="justify-content:center;margin-top:6px;">
-                    <button class="btn btn-ghost btn-xs fav-play-shape" data-frets="${sh.frets.join(',')}">▶ Ouvir</button>
+                    <button class="btn btn-ghost btn-xs fav-play-shape" data-frets="${sh.frets.join(',')}">${icon('play', 12)} Ouvir</button>
                     <button class="btn btn-secondary btn-xs fav-open-chord" data-r="${sh.rootPc}" data-ct="${sh.chordTypeId}">Abrir</button>
                   </div>
                 </div>
@@ -101,7 +101,7 @@ export const ModFavorites = {
 
       ${showCat('scales') && favs.scales.length ? `
         <section class="card">
-          <h3 class="section-title">Escalas Favoritas (${favs.scales.length})</h3>
+          <h3 class="section-title" style="margin-bottom:12px;">Escalas Favoritas (${favs.scales.length})</h3>
           <div class="fav-grid">
             ${favs.scales.map((s) => `
               <div class="subcard fav-card">
@@ -111,9 +111,9 @@ export const ModFavorites = {
                 </div>
                 <p class="muted-text small"><code>${s.subtitle}</code></p>
                 <div class="fav-actions">
-                  <button class="btn btn-ghost btn-xs fav-play-scale" data-r="${s.rootPc}" data-sc="${s.scaleId}">▶ Ouvir</button>
+                  <button class="btn btn-ghost btn-xs fav-play-scale" data-r="${s.rootPc}" data-sc="${s.scaleId}">${icon('play', 12)} Ouvir</button>
                   <button class="btn btn-secondary btn-xs fav-open-scale" data-r="${s.rootPc}" data-sc="${s.scaleId}">Abrir</button>
-                  <button class="btn btn-ghost btn-xs text-red fav-rm" data-cat="scales" data-id="${s.id}">✕</button>
+                  <button class="btn btn-ghost btn-icon-xs text-red fav-rm" data-cat="scales" data-id="${s.id}" aria-label="Remover">${icon('trash', 12)}</button>
                 </div>
               </div>
             `).join('')}
@@ -123,7 +123,7 @@ export const ModFavorites = {
 
       ${showCat('progressions') && favs.progressions.length ? `
         <section class="card">
-          <h3 class="section-title">Progressões Favoritas (${favs.progressions.length})</h3>
+          <h3 class="section-title" style="margin-bottom:12px;">Progressões Favoritas (${favs.progressions.length})</h3>
           <div class="fav-grid">
             ${favs.progressions.map((p) => `
               <div class="subcard fav-card">
@@ -134,7 +134,7 @@ export const ModFavorites = {
                 <p class="muted-text small">${p.subtitle}</p>
                 <div class="fav-actions">
                   <button class="btn btn-secondary btn-xs fav-open-prog" data-k="${p.keyPc}" data-pid="${p.progId}">Abrir</button>
-                  <button class="btn btn-ghost btn-xs text-red fav-rm" data-cat="progressions" data-id="${p.id}">✕</button>
+                  <button class="btn btn-ghost btn-icon-xs text-red fav-rm" data-cat="progressions" data-id="${p.id}" aria-label="Remover">${icon('trash', 12)}</button>
                 </div>
               </div>
             `).join('')}
@@ -148,10 +148,7 @@ export const ModFavorites = {
 
   bindEvents(container, app) {
     container.querySelectorAll('[data-ftab]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.state.tab = btn.dataset.ftab;
-        this.render(container, app);
-      });
+      btn.addEventListener('click', () => { this.state.tab = btn.dataset.ftab; this.render(container, app); });
     });
 
     container.querySelectorAll('.fav-goto').forEach((btn) => {
@@ -161,7 +158,7 @@ export const ModFavorites = {
     container.querySelectorAll('.fav-rm').forEach((btn) => {
       btn.addEventListener('click', () => {
         Storage.removeFavorite(btn.dataset.cat, btn.dataset.id);
-        app.toast('Item removido dos favoritos.');
+        app.toast('Removido dos favoritos.');
         this.render(container, app);
       });
     });
@@ -193,11 +190,9 @@ export const ModFavorites = {
     container.querySelectorAll('.fav-open-chord').forEach((btn) => {
       btn.addEventListener('click', () => app.navigate('chords', { rootPc: Number(btn.dataset.r), chordTypeId: btn.dataset.ct }));
     });
-
     container.querySelectorAll('.fav-open-scale').forEach((btn) => {
       btn.addEventListener('click', () => app.navigate('scales', { rootPc: Number(btn.dataset.r), scaleId: btn.dataset.sc }));
     });
-
     container.querySelectorAll('.fav-open-prog').forEach((btn) => {
       btn.addEventListener('click', () => app.navigate('progressions', { keyPc: Number(btn.dataset.k), selectedProgId: btn.dataset.pid }));
     });

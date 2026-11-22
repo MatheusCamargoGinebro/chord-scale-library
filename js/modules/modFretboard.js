@@ -1,7 +1,7 @@
 /**
  * Module 2: Full 24-Fret Interactive Fretboard Visualizer
- * Includes: Notes/Intervals/Degrees/Roots/Selected display, Modes (Notes, Intervals, Scales, Chords, Arpeggios),
- * Zoom (Full Neck, Specific Region, Movable Window), Heatmap, Reverse Chord Finder & Reverse Scale Finder.
+ * Streamlined controls, crisp SVG icons, inline playback controls for selected notes,
+ * Zoom/Movable Window, Heatmap, CAGED overlay, and Reverse Chord & Scale Finder.
  */
 
 import { Theory } from '../core/theory.js';
@@ -9,25 +9,28 @@ import { ChordEngine } from '../core/chordEngine.js';
 import { ScaleEngine } from '../core/scaleEngine.js';
 import { Storage } from '../core/storage.js';
 import { AudioEngine } from '../audio/audioEngine.js';
+import { RhythmEngine } from '../audio/rhythmEngine.js';
 import { renderFretboard } from '../ui/fretboard.js';
 import { ExportTools } from '../ui/exportTools.js';
+import { icon } from '../ui/icons.js';
+import { renderPlaybackControlsHTML, bindPlaybackControls } from '../ui/playbackBar.js';
 
 export const ModFretboard = {
   id: 'fretboard',
   state: {
-    mode: 'scales', // 'notes' | 'intervals' | 'scales' | 'chords' | 'arpeggios' | 'reverse'
-    displayMode: 'notes', // 'notes' | 'intervals' | 'degrees' | 'roots' | 'selected'
+    mode: 'scales',
+    displayMode: 'notes',
     rootPc: 0,
     scaleId: 'pentatonic_minor',
     chordTypeId: 'maj7',
     arpeggioId: 'maj7',
-    zoomMode: 'full', // 'full' | 'region' | 'window'
+    zoomMode: 'full',
     regionPreset: '0-12',
     windowStart: 0,
     windowSpan: 12,
     showHeatmap: false,
     showCaged: false,
-    selectedNotes: [], // [{ stringIdx, fret, midi, pc, note }]
+    selectedNotes: [],
   },
 
   applyExternal(opts = {}) {
@@ -72,20 +75,16 @@ export const ModFretboard = {
       }));
     }
     if (s.mode === 'notes' || s.mode === 'intervals') {
-      const allIvs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-      return ScaleEngine.getFretboardPositions(s.rootPc, allIvs, tuning, 24);
+      return ScaleEngine.getFretboardPositions(s.rootPc, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], tuning, 24);
     }
     if (s.mode === 'scales') {
-      const sc = Theory.getScale(s.scaleId);
-      return ScaleEngine.getFretboardPositions(s.rootPc, sc.intervals, tuning, 24);
+      return ScaleEngine.getFretboardPositions(s.rootPc, Theory.getScale(s.scaleId).intervals, tuning, 24);
     }
     if (s.mode === 'chords') {
-      const ct = Theory.getChordType(s.chordTypeId);
-      return ScaleEngine.getFretboardPositions(s.rootPc, ct.intervals, tuning, 24);
+      return ScaleEngine.getFretboardPositions(s.rootPc, Theory.getChordType(s.chordTypeId).intervals, tuning, 24);
     }
     if (s.mode === 'arpeggios') {
-      const arp = Theory.getArpeggio(s.arpeggioId);
-      return ScaleEngine.getFretboardPositions(s.rootPc, arp.intervals, tuning, 24);
+      return ScaleEngine.getFretboardPositions(s.rootPc, Theory.getArpeggio(s.arpeggioId).intervals, tuning, 24);
     }
     return [];
   },
@@ -110,65 +109,35 @@ export const ModFretboard = {
       <div class="module-header">
         <div>
           <h2 class="module-title">Visualizador do Braço (24 Casas)</h2>
-          <p class="module-subtitle">Clique em qualquer casa para ouvir a nota, ativar o <strong>Reverse Chord / Scale Finder</strong> ou explorar o <strong>Heatmap</strong> do braço.</p>
+          <p class="module-subtitle">Cada casa é delimitada por trastes individuais. Clique nas notas para ouvir ou identificar acordes e escalas.</p>
         </div>
         <div class="action-bar">
-          <button id="fb-toggle-heatmap" class="btn ${this.state.showHeatmap ? 'btn-gold-active' : 'btn-ghost'} btn-sm">🔥 Heatmap ${this.state.showHeatmap ? 'ON' : 'OFF'}</button>
-          <button id="fb-toggle-caged" class="btn ${this.state.showCaged ? 'btn-accent-active' : 'btn-ghost'} btn-sm">CAGED ${this.state.showCaged ? 'ON' : 'OFF'}</button>
-          <button id="fb-export-png" class="btn btn-ghost btn-sm">Exportar PNG</button>
+          <button id="fb-toggle-heatmap" class="btn ${this.state.showHeatmap ? 'btn-gold-active' : 'btn-ghost'} btn-sm">${icon('flame', 14)} Heatmap</button>
+          <button id="fb-toggle-caged" class="btn ${this.state.showCaged ? 'btn-accent-active' : 'btn-ghost'} btn-sm">${icon('layers', 14)} CAGED</button>
+          <button id="fb-export-png" class="btn btn-ghost btn-sm">${icon('image', 14)} PNG</button>
         </div>
       </div>
 
-      <!-- Controls Bar -->
+      <!-- Compact Control Bar -->
       <section class="card">
-        <div class="controls-grid-3">
-          <div>
-            <label class="field-label">Modo de Visualização</label>
-            <div class="pill-wrap">
-              ${[
-                ['scales', 'Escalas'],
-                ['chords', 'Acordes'],
-                ['arpeggios', 'Arpejos'],
-                ['notes', 'Todas Notas'],
-                ['intervals', 'Intervalos'],
-                ['reverse', '🔍 Reverse Finder'],
-              ].map(([id, label]) => `
-                <button class="pill-btn pill-sm ${this.state.mode === id ? 'active' : ''}" data-fb-mode="${id}">${label}</button>
-              `).join('')}
-            </div>
-          </div>
-
-          <div>
-            <label class="field-label">Exibir nos Marcadores</label>
-            <div class="pill-wrap">
-              ${[
-                ['notes', 'Notas'],
-                ['intervals', 'Intervalos'],
-                ['degrees', 'Graus'],
-                ['roots', 'Só Tônicas'],
-                ['selected', 'Só Selecionadas'],
-              ].map(([id, label]) => `
-                <button class="pill-btn pill-sm ${this.state.displayMode === id ? 'active' : ''}" data-fb-disp="${id}">${label}</button>
-              `).join('')}
-            </div>
-          </div>
-
-          <div>
-            <label class="field-label">Zoom do Braço</label>
-            <div class="pill-wrap">
-              <button class="pill-btn pill-sm ${this.state.zoomMode === 'full' ? 'active' : ''}" data-zoom="full">Braço Inteiro (0–24)</button>
-              <button class="pill-btn pill-sm ${this.state.zoomMode === 'region' ? 'active' : ''}" data-zoom="region">Região</button>
-              <button class="pill-btn pill-sm ${this.state.zoomMode === 'window' ? 'active' : ''}" data-zoom="window">Janela Móvel</button>
-            </div>
-          </div>
+        <div class="segmented-tabs" style="margin-bottom:12px;">
+          ${[
+            ['scales', 'Escalas'],
+            ['chords', 'Acordes'],
+            ['arpeggios', 'Arpejos'],
+            ['notes', 'Todas Notas'],
+            ['intervals', 'Intervalos'],
+            ['reverse', 'Identificador Reverso'],
+          ].map(([id, label]) => `
+            <button class="seg-tab ${this.state.mode === id ? 'active' : ''}" data-fb-mode="${id}">${label}</button>
+          `).join('')}
         </div>
 
-        <!-- Contextual Sub-controls -->
-        <div class="sub-controls-row">
+        <div class="sub-controls-row" style="margin-top:0;padding-top:0;border-top:none;">
           ${this.state.mode !== 'reverse' ? `
             <div class="inline-control">
               <label class="field-label">Tônica</label>
-              <select id="fb-root" class="select-control">
+              <select id="fb-root" class="select-control select-sm">
                 ${Theory.getAllRoots().map((r) => `<option value="${r.pc}" ${r.pc === this.state.rootPc ? 'selected' : ''}>${r.label}</option>`).join('')}
               </select>
             </div>
@@ -177,7 +146,7 @@ export const ModFretboard = {
           ${this.state.mode === 'scales' ? `
             <div class="inline-control">
               <label class="field-label">Escala</label>
-              <select id="fb-scale" class="select-control">
+              <select id="fb-scale" class="select-control select-sm">
                 ${Theory.getScales().map((sc) => `<option value="${sc.id}" ${sc.id === this.state.scaleId ? 'selected' : ''}>${sc.name}</option>`).join('')}
               </select>
             </div>
@@ -185,9 +154,9 @@ export const ModFretboard = {
 
           ${this.state.mode === 'chords' ? `
             <div class="inline-control">
-              <label class="field-label">Tipo de Acorde</label>
-              <select id="fb-chord" class="select-control">
-                ${Theory.getChordTypes().map((c) => `<option value="${c.id}" ${c.id === this.state.chordTypeId ? 'selected' : ''}>${c.name} (${c.symbol || 'Maj'})</option>`).join('')}
+              <label class="field-label">Acorde</label>
+              <select id="fb-chord" class="select-control select-sm">
+                ${Theory.getChordTypes().map((c) => `<option value="${c.id}" ${c.id === this.state.chordTypeId ? 'selected' : ''}>${c.name}</option>`).join('')}
               </select>
             </div>
           ` : ''}
@@ -195,18 +164,38 @@ export const ModFretboard = {
           ${this.state.mode === 'arpeggios' ? `
             <div class="inline-control">
               <label class="field-label">Arpejo</label>
-              <select id="fb-arp" class="select-control">
+              <select id="fb-arp" class="select-control select-sm">
                 ${Theory.getArpeggios().map((a) => `<option value="${a.id}" ${a.id === this.state.arpeggioId ? 'selected' : ''}>${a.name}</option>`).join('')}
               </select>
             </div>
           ` : ''}
 
+          <div class="inline-control">
+            <label class="field-label">Exibir</label>
+            <select id="fb-disp-sel" class="select-control select-sm">
+              <option value="notes" ${this.state.displayMode === 'notes' ? 'selected' : ''}>Notas</option>
+              <option value="intervals" ${this.state.displayMode === 'intervals' ? 'selected' : ''}>Intervalos</option>
+              <option value="degrees" ${this.state.displayMode === 'degrees' ? 'selected' : ''}>Graus</option>
+              <option value="roots" ${this.state.displayMode === 'roots' ? 'selected' : ''}>Somente Tônicas</option>
+              <option value="selected" ${this.state.displayMode === 'selected' ? 'selected' : ''}>Apenas Selecionadas</option>
+            </select>
+          </div>
+
+          <div class="inline-control">
+            <label class="field-label">Zoom</label>
+            <div class="pill-wrap">
+              <button class="pill-btn pill-xs ${this.state.zoomMode === 'full' ? 'active' : ''}" data-zoom="full">0–24</button>
+              <button class="pill-btn pill-xs ${this.state.zoomMode === 'region' ? 'active' : ''}" data-zoom="region">Região</button>
+              <button class="pill-btn pill-xs ${this.state.zoomMode === 'window' ? 'active' : ''}" data-zoom="window">Janela</button>
+            </div>
+          </div>
+
           ${this.state.zoomMode === 'region' ? `
             <div class="inline-control">
-              <label class="field-label">Região Específica</label>
+              <label class="field-label">Casas</label>
               <div class="pill-wrap">
                 ${['0-5', '0-12', '5-12', '9-16', '12-24'].map((rg) => `
-                  <button class="pill-btn pill-xs ${this.state.regionPreset === rg ? 'active' : ''}" data-reg="${rg}">Casas ${rg}</button>
+                  <button class="pill-btn pill-xs ${this.state.regionPreset === rg ? 'active' : ''}" data-reg="${rg}">${rg}</button>
                 `).join('')}
               </div>
             </div>
@@ -214,7 +203,7 @@ export const ModFretboard = {
 
           ${this.state.zoomMode === 'window' ? `
             <div class="inline-control slider-pair">
-              <label class="field-label">Casa Inicial: <strong>${this.state.windowStart}</strong></label>
+              <label class="field-label">Início: <strong>Casa ${this.state.windowStart}</strong></label>
               <input type="range" id="fb-win-start" min="0" max="19" value="${this.state.windowStart}">
             </div>
             <div class="inline-control slider-pair">
@@ -230,85 +219,86 @@ export const ModFretboard = {
         <div class="fretboard-scroll" id="main-fretboard-mount"></div>
         <div class="fretboard-legend">
           <div class="legend-items">
-            <span class="legend-dot"><i style="background:#f59e0b"></i> Tônica (R)</span>
+            <span class="legend-dot"><i style="background:#f59e0b"></i> Tônica</span>
             <span class="legend-dot"><i style="background:#22c55e"></i> 3ª Maior</span>
             <span class="legend-dot"><i style="background:#38bdf8"></i> 3ª Menor</span>
             <span class="legend-dot"><i style="background:#3b82f6"></i> 5ª Justa</span>
-            <span class="legend-dot"><i style="background:#eab308"></i> b7 / 7</span>
-            ${this.state.showHeatmap ? `<span class="legend-dot"><i style="background:#ef4444"></i> Heatmap: Alta frequência de uso</span>` : ''}
+            <span class="legend-dot"><i style="background:#eab308"></i> Sétima</span>
           </div>
           <div class="action-bar">
-            ${this.state.showHeatmap ? `<button id="fb-reset-heat" class="btn btn-ghost btn-xs">Resetar Heatmap</button>` : ''}
-            <button id="fb-play-sel" class="btn btn-secondary btn-xs" ${!this.state.selectedNotes.length ? 'disabled' : ''}>▶ Tocar Selecionadas (${this.state.selectedNotes.length})</button>
-            <button id="fb-clear-sel" class="btn btn-ghost btn-xs" ${!this.state.selectedNotes.length ? 'disabled' : ''}>Limpar Seleção</button>
+            ${this.state.showHeatmap ? `<button id="fb-reset-heat" class="btn btn-ghost btn-xs">${icon('rotateCcw', 12)} Resetar Heatmap</button>` : ''}
+            <button id="fb-play-sel" class="btn btn-secondary btn-xs" ${!this.state.selectedNotes.length ? 'disabled' : ''}>${icon('play', 12)} Tocar Selecionadas (${this.state.selectedNotes.length})</button>
+            <button id="fb-clear-sel" class="btn btn-ghost btn-xs" ${!this.state.selectedNotes.length ? 'disabled' : ''}>${icon('close', 12)} Limpar</button>
           </div>
         </div>
+        ${this.state.selectedNotes.length ? `<div style="margin-top:12px;">${renderPlaybackControlsHTML({ mode: 'chord', bpm: RhythmEngine.bpm, cadence: AudioEngine.chordCadence, idPrefix: 'fb-pb' })}</div>` : ''}
       </section>
 
-      <!-- Reverse Chord & Scale Finder Results -->
+      <!-- Reverse Chord & Scale Finder -->
       <section class="card reverse-finder-card">
         <div class="card-header-row">
           <div>
-            <h3 class="section-title">🔍 Reverse Chord & Scale Finder</h3>
-            <p class="muted-text small">Clique em notas diretamente no braço acima para montar um acorde ou escala. O sistema identifica automaticamente!</p>
+            <h3 class="section-title icon-label">${icon('search', 16)} Identificador Reverso de Acordes &amp; Escalas</h3>
+            <p class="muted-text small">Clique em notas diretamente no braço acima para descobrir qual acorde ou escala você formou.</p>
           </div>
           <div class="pill-wrap">
             ${this.state.selectedNotes.length
               ? this.state.selectedNotes.map((n, i) => `
                   <span class="note-pill selected-note-chip" data-rm-sel="${i}" title="Clique para remover">
-                    ${n.note} <small>C${tuning.strings - n.stringIdx}:f${n.fret}</small> ×
+                    ${n.note} <small>C${tuning.strings - n.stringIdx}:f${n.fret}</small> ${icon('close', 11)}
                   </span>
                 `).join('')
-              : '<span class="muted-text small">Nenhuma nota marcada ainda — clique no braço!</span>'}
+              : '<span class="muted-text small">Clique nas casas do braço para começar</span>'}
           </div>
         </div>
 
-        <div class="reverse-grid">
-          <div class="subcard">
-            <h4 class="subcard-title">Acordes Identificados (Reverse Chord Finder)</h4>
-            ${chordMatches.length ? `
-              <div class="match-list">
-                ${chordMatches.map((m) => `
-                  <div class="match-row">
-                    <div>
-                      <strong class="match-symbol">${m.symbol}</strong>
-                      <span class="muted-text small">${m.chordType.name} · <code>${m.formula}</code></span>
+        ${this.state.selectedNotes.length ? `
+          <div class="reverse-grid">
+            <div class="subcard">
+              <h4 class="subcard-title">Acordes Identificados</h4>
+              ${chordMatches.length ? `
+                <div class="match-list">
+                  ${chordMatches.map((m) => `
+                    <div class="match-row">
+                      <div>
+                        <strong class="match-symbol">${m.symbol}</strong>
+                        <span class="muted-text small">${m.chordType.name}</span>
+                      </div>
+                      <div class="match-right">
+                        <span class="badge badge-success">${m.confidence}%</span>
+                        <button class="btn btn-ghost btn-xs rev-open-chord" data-r="${m.rootPc}" data-ct="${m.chordTypeId}">Abrir ${icon('arrowRight', 12)}</button>
+                      </div>
                     </div>
-                    <div class="match-right">
-                      <span class="badge badge-success">${m.confidence}%</span>
-                      <button class="btn btn-ghost btn-xs rev-open-chord" data-r="${m.rootPc}" data-ct="${m.chordTypeId}">Abrir →</button>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            ` : `<p class="muted-text small">Marque pelo menos 2 notas diferentes no braço para identificar acordes e inversões.</p>`}
-          </div>
+                  `).join('')}
+                </div>
+              ` : `<p class="muted-text small">Marque pelo menos 2 notas diferentes para identificar acordes.</p>`}
+            </div>
 
-          <div class="subcard">
-            <h4 class="subcard-title">Escalas Identificadas (Reverse Scale Finder)</h4>
-            ${scaleMatches.length ? `
-              <div class="match-list">
-                ${scaleMatches.map((m) => `
-                  <div class="match-row">
-                    <div>
-                      <strong class="match-symbol">${m.fullName}</strong>
-                      <span class="muted-text small">${m.category} · <code>${m.formula}</code></span>
+            <div class="subcard">
+              <h4 class="subcard-title">Escalas Identificadas</h4>
+              ${scaleMatches.length ? `
+                <div class="match-list">
+                  ${scaleMatches.map((m) => `
+                    <div class="match-row">
+                      <div>
+                        <strong class="match-symbol">${m.fullName}</strong>
+                        <span class="muted-text small">${m.category}</span>
+                      </div>
+                      <div class="match-right">
+                        <span class="badge badge-info">${m.matchPercent}%</span>
+                        <button class="btn btn-ghost btn-xs rev-open-scale" data-r="${m.rootPc}" data-sc="${m.scaleId}">Abrir ${icon('arrowRight', 12)}</button>
+                      </div>
                     </div>
-                    <div class="match-right">
-                      <span class="badge badge-info">${m.matchPercent}% cobertura</span>
-                      <button class="btn btn-ghost btn-xs rev-open-scale" data-r="${m.rootPc}" data-sc="${m.scaleId}">Abrir →</button>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            ` : `<p class="muted-text small">Marque pelo menos 3 notas diferentes no braço para descobrir quais escalas e modos contêm essas notas.</p>`}
+                  `).join('')}
+                </div>
+              ` : `<p class="muted-text small">Marque pelo menos 3 notas diferentes para identificar escalas.</p>`}
+            </div>
           </div>
-        </div>
+        ` : ''}
       </section>
     `;
 
-    const mount = container.querySelector('#main-fretboard-mount');
-    renderFretboard(mount, {
+    renderFretboard(container.querySelector('#main-fretboard-mount'), {
       id: 'mod-fretboard-svg',
       tuning,
       startFret,
@@ -326,7 +316,6 @@ export const ModFretboard = {
         if (idx >= 0) {
           this.state.selectedNotes.splice(idx, 1);
         } else {
-          // In Reverse Chord mode, allow replacing note on same string for easy voicing construction
           if (this.state.mode === 'reverse') {
             this.state.selectedNotes = this.state.selectedNotes.filter((n) => n.stringIdx !== noteObj.stringIdx);
           }
@@ -340,6 +329,8 @@ export const ModFretboard = {
   },
 
   bindEvents(container, app) {
+    bindPlaybackControls(container, { mode: 'chord', idPrefix: 'fb-pb' });
+
     container.querySelectorAll('[data-fb-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.state.mode = btn.dataset.fbMode;
@@ -350,11 +341,9 @@ export const ModFretboard = {
       });
     });
 
-    container.querySelectorAll('[data-fb-disp]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.state.displayMode = btn.dataset.fbDisp;
-        this.render(container, app);
-      });
+    container.querySelector('#fb-disp-sel')?.addEventListener('change', (e) => {
+      this.state.displayMode = e.target.value;
+      this.render(container, app);
     });
 
     container.querySelectorAll('[data-zoom]').forEach((btn) => {
@@ -403,7 +392,7 @@ export const ModFretboard = {
     });
     container.querySelector('#fb-reset-heat')?.addEventListener('click', () => {
       Storage.resetHeatmap();
-      app.toast('Heatmap resetado para o padrão ergonômico.');
+      app.toast('Heatmap resetado.');
       this.render(container, app);
     });
 
@@ -414,7 +403,7 @@ export const ModFretboard = {
 
     container.querySelector('#fb-play-sel')?.addEventListener('click', () => {
       const midis = this.state.selectedNotes.slice().sort((a, b) => a.midi - b.midi).map((n) => n.midi);
-      AudioEngine.playChord(midis, { strumMs: 36, duration: 2.0 });
+      AudioEngine.playChordWithCadence(midis, { bpm: RhythmEngine.bpm, cadence: AudioEngine.chordCadence, loop: false });
     });
 
     container.querySelector('#fb-clear-sel')?.addEventListener('click', () => {
@@ -430,21 +419,16 @@ export const ModFretboard = {
     });
 
     container.querySelectorAll('.rev-open-chord').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        app.navigate('chords', { rootPc: Number(btn.dataset.r), chordTypeId: btn.dataset.ct });
-      });
+      btn.addEventListener('click', () => app.navigate('chords', { rootPc: Number(btn.dataset.r), chordTypeId: btn.dataset.ct }));
     });
-
     container.querySelectorAll('.rev-open-scale').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        app.navigate('scales', { rootPc: Number(btn.dataset.r), scaleId: btn.dataset.sc });
-      });
+      btn.addEventListener('click', () => app.navigate('scales', { rootPc: Number(btn.dataset.r), scaleId: btn.dataset.sc }));
     });
 
     container.querySelector('#fb-export-png')?.addEventListener('click', () => {
       const svg = container.querySelector('#mod-fretboard-svg');
       ExportTools.exportSvgAsPng(svg, 'fretboard-visualizer.png', `Braço 24 Casas (${Theory.getTuning().name})`);
-      app.toast('Visualização do braço exportada em PNG!');
+      app.toast('Braço exportado em PNG!');
     });
   },
 };

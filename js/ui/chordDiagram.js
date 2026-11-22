@@ -8,7 +8,7 @@
 
 import { Theory } from '../core/theory.js';
 
-export function renderVerticalChordSVG(voicing, { compact = false, id = '' } = {}) {
+export function renderVerticalChordSVG(voicing, { compact = false, id = '', leftHanded = Theory.leftHanded } = {}) {
   const numStrings = voicing.frets.length;
   const numFrets = 5;
   const w = compact ? 156 : 220;
@@ -23,6 +23,7 @@ export function renderVerticalChordSVG(voicing, { compact = false, id = '' } = {
   const strGap = gridW / (numStrings - 1);
   const fretGap = gridH / numFrets;
 
+  const strX = (s) => padLeft + (leftHanded ? (numStrings - 1 - s) : s) * strGap;
   const showNut = voicing.baseFret === 1;
   const svgId = id ? `id="${id}"` : '';
 
@@ -51,7 +52,7 @@ export function renderVerticalChordSVG(voicing, { compact = false, id = '' } = {
 
   // Vertical string lines
   for (let s = 0; s < numStrings; s++) {
-    const x = padLeft + s * strGap;
+    const x = strX(s);
     const sw = 2.1 - (s / (numStrings - 1)) * 1.1;
     svg += `<line x1="${x}" y1="${padTop}" x2="${x}" y2="${padTop + gridH}" stroke="currentColor" stroke-opacity="0.45" stroke-width="${sw.toFixed(2)}"/>`;
   }
@@ -61,8 +62,10 @@ export function renderVerticalChordSVG(voicing, { compact = false, id = '' } = {
     const relFret = voicing.barre.fret - voicing.baseFret + 1;
     if (relFret >= 1 && relFret <= numFrets) {
       const y = padTop + (relFret - 0.5) * fretGap;
-      const x1 = padLeft + voicing.barre.fromString * strGap;
-      const x2 = padLeft + voicing.barre.toString * strGap;
+      const xa = strX(voicing.barre.fromString);
+      const xb = strX(voicing.barre.toString);
+      const x1 = Math.min(xa, xb);
+      const x2 = Math.max(xa, xb);
       const r = compact ? 7 : 9.5;
       svg += `<rect x="${x1 - r}" y="${y - r}" width="${x2 - x1 + r * 2}" height="${r * 2}" rx="${r}" fill="#f59e0b" fill-opacity="0.88"/>`;
     }
@@ -70,7 +73,7 @@ export function renderVerticalChordSVG(voicing, { compact = false, id = '' } = {
 
   // Open/Mute markers + Fretted dots + Bottom note names
   voicing.stringNotes.forEach((sn, s) => {
-    const x = padLeft + s * strGap;
+    const x = strX(s);
     const topY = padTop - (compact ? 11 : 14);
     const botY = padTop + gridH + (compact ? 16 : 22);
 
@@ -99,13 +102,13 @@ export function renderVerticalChordSVG(voicing, { compact = false, id = '' } = {
   return svg;
 }
 
-export function renderHorizontalChordSVG(voicing, { id = '' } = {}) {
+export function renderHorizontalChordSVG(voicing, { id = '', leftHanded = Theory.leftHanded } = {}) {
   const numStrings = voicing.frets.length;
   const numFrets = 5;
   const w = 310;
   const h = numStrings === 7 ? 205 : 185;
-  const padLeft = 46;
-  const padRight = 20;
+  const padLeft = leftHanded ? 24 : 46;
+  const padRight = leftHanded ? 46 : 20;
   const padTop = 24;
   const padBottom = 30;
 
@@ -117,6 +120,11 @@ export function renderHorizontalChordSVG(voicing, { id = '' } = {}) {
   const svgId = id ? `id="${id}"` : '';
 
   const stringY = (sIdx) => padTop + (numStrings - 1 - sIdx) * strGap;
+  const fretCenterX = (relFret) => leftHanded
+    ? padLeft + gridW - (relFret - 0.5) * fretGap
+    : padLeft + (relFret - 0.5) * fretGap;
+  const openMarkerX = leftHanded ? padLeft + gridW + 15 : padLeft - 15;
+  const tuningLabelX = leftHanded ? w - 12 : 12;
 
   let svg = `<svg ${svgId} class="chord-svg-horizontal" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
 
@@ -125,15 +133,16 @@ export function renderHorizontalChordSVG(voicing, { id = '' } = {}) {
 
   // Nut or first fret bar
   if (showNut) {
-    svg += `<rect x="${padLeft - 4}" y="${padTop - 6}" width="5.5" height="${gridH + 12}" rx="1.5" fill="#f1f5f9"/>`;
+    const nutX = leftHanded ? padLeft + gridW - 1.5 : padLeft - 4;
+    svg += `<rect x="${nutX}" y="${padTop - 6}" width="5.5" height="${gridH + 12}" rx="1.5" fill="#f1f5f9"/>`;
   }
 
   // Fret wires & fret labels at bottom
   for (let f = 1; f <= numFrets; f++) {
-    const x = padLeft + f * fretGap;
-    svg += `<line x1="${x}" y1="${padTop - 6}" x2="${x}" y2="${padTop + gridH + 6}" stroke="#94a3b8" stroke-opacity="0.55" stroke-width="1.8"/>`;
+    const x = leftHanded ? padLeft + gridW - f * fretGap : padLeft + f * fretGap;
+    svg += `<line x1="${x}" y1="${padTop - 6}" x2="${x}" y2="${padTop + gridH + 6}" stroke="#cbd5e1" stroke-opacity="0.72" stroke-width="2.2"/>`;
     const fretNum = voicing.baseFret + f - 1;
-    svg += `<text x="${x - fretGap / 2}" y="${padTop + gridH + 22}" fill="#94a3b8" font-size="10.5" font-weight="700" text-anchor="middle" font-family="JetBrains Mono, monospace">${fretNum}</text>`;
+    svg += `<text x="${fretCenterX(f)}" y="${padTop + gridH + 22}" fill="#94a3b8" font-size="10.5" font-weight="700" text-anchor="middle" font-family="JetBrains Mono, monospace">${fretNum}</text>`;
   }
 
   // Strings
@@ -141,14 +150,14 @@ export function renderHorizontalChordSVG(voicing, { id = '' } = {}) {
     const y = stringY(s);
     const sw = 1.1 + ((numStrings - 1 - s) / (numStrings - 1)) * 1.9;
     svg += `<line x1="${padLeft}" y1="${y}" x2="${padLeft + gridW}" y2="${y}" stroke="#cbd5e1" stroke-opacity="0.65" stroke-width="${sw.toFixed(2)}"/>`;
-    svg += `<text x="12" y="${y + 3.5}" fill="#94a3b8" font-size="10.5" font-weight="700" text-anchor="middle" font-family="JetBrains Mono, monospace">${voicing.stringNotes[s].tuningNote}</text>`;
+    svg += `<text x="${tuningLabelX}" y="${y + 3.5}" fill="#94a3b8" font-size="10.5" font-weight="700" text-anchor="middle" font-family="JetBrains Mono, monospace">${voicing.stringNotes[s].tuningNote}</text>`;
   }
 
   // Barre vertical bar
   if (voicing.barre) {
     const relFret = voicing.barre.fret - voicing.baseFret + 1;
     if (relFret >= 1 && relFret <= numFrets) {
-      const x = padLeft + (relFret - 0.5) * fretGap;
+      const x = fretCenterX(relFret);
       const yTop = stringY(voicing.barre.toString);
       const yBot = stringY(voicing.barre.fromString);
       svg += `<rect x="${x - 8.5}" y="${yTop - 8.5}" width="17" height="${yBot - yTop + 17}" rx="8.5" fill="#f59e0b" fill-opacity="0.82"/>`;
@@ -159,13 +168,13 @@ export function renderHorizontalChordSVG(voicing, { id = '' } = {}) {
   voicing.stringNotes.forEach((sn, s) => {
     const y = stringY(s);
     if (sn.muted) {
-      svg += `<text x="${padLeft - 15}" y="${y + 4}" fill="#ef4444" font-size="12" font-weight="800" text-anchor="middle" font-family="Inter, sans-serif">×</text>`;
+      svg += `<text x="${openMarkerX}" y="${y + 4}" fill="#ef4444" font-size="12" font-weight="800" text-anchor="middle" font-family="Inter, sans-serif">×</text>`;
     } else if (sn.fret === 0) {
       const isRoot = sn.interval === 0;
-      svg += `<circle cx="${padLeft - 15}" cy="${y}" r="5.5" fill="${isRoot ? '#f59e0b' : 'none'}" stroke="${isRoot ? '#f59e0b' : '#cbd5e1'}" stroke-width="1.8"/>`;
+      svg += `<circle cx="${openMarkerX}" cy="${y}" r="5.5" fill="${isRoot ? '#f59e0b' : 'none'}" stroke="${isRoot ? '#f59e0b' : '#cbd5e1'}" stroke-width="1.8"/>`;
     } else {
       const relFret = sn.fret - voicing.baseFret + 1;
-      const x = padLeft + (relFret - 0.5) * fretGap;
+      const x = fretCenterX(relFret);
       const isRoot = sn.interval === 0;
       const fill = isRoot ? '#f59e0b' : sn.color || '#38bdf8';
       svg += `<circle cx="${x}" cy="${y}" r="9.5" fill="${fill}" stroke="#090d16" stroke-width="1.4"/>`;

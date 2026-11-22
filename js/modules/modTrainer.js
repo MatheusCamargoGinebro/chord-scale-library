@@ -1,7 +1,6 @@
 /**
  * Module 8: Interactive Music Trainer / Quiz (Treinador Interativo)
- * Modes: Note Identification, Chord Identification, Scale Identification, Interval Identification, Mixed.
- * Tracks Hits, Misses, Accuracy, Streak, Live Timer, and Persistent Performance History.
+ * Crisp SVG icons, clean HUD, visual + audio questions & performance history.
  */
 
 import { Theory } from '../core/theory.js';
@@ -11,13 +10,14 @@ import { Storage } from '../core/storage.js';
 import { AudioEngine } from '../audio/audioEngine.js';
 import { renderFretboard } from '../ui/fretboard.js';
 import { renderVerticalChordSVG } from '../ui/chordDiagram.js';
+import { icon } from '../ui/icons.js';
 
 export const ModTrainer = {
   id: 'trainer',
   state: {
-    quizType: 'note', // 'note' | 'chord' | 'scale' | 'interval' | 'mixed'
+    quizType: 'note',
     question: null,
-    answered: null, // { selected, isCorrect }
+    answered: null,
     correct: 0,
     wrong: 0,
     streak: 0,
@@ -69,9 +69,7 @@ export const ModTrainer = {
       const correctLabel = Theory.pcToNote(pc, false);
 
       const distractors = new Set([correctLabel]);
-      while (distractors.size < 4) {
-        distractors.add(Theory.pcToNote(Math.floor(Math.random() * 12), false));
-      }
+      while (distractors.size < 4) distractors.add(Theory.pcToNote(Math.floor(Math.random() * 12), false));
 
       return {
         type: 'note',
@@ -91,8 +89,7 @@ export const ModTrainer = {
       const rootPc = Math.floor(Math.random() * 12);
       const pool = ['maj', 'min', '7', 'maj7', 'm7', 'sus2', 'sus4', 'dim', 'aug', 'add9'];
       const typeId = this.pickRandom(pool);
-      const voicings = ChordEngine.getVoicings(rootPc, typeId, tuning);
-      const voicing = voicings[0];
+      const voicing = ChordEngine.getVoicings(rootPc, typeId, tuning)[0];
       const ct = Theory.getChordType(typeId);
       const correctLabel = `${Theory.pcToNote(rootPc, false)}${ct.symbol}`;
 
@@ -100,8 +97,7 @@ export const ModTrainer = {
       while (distractors.size < 4) {
         const altType = this.pickRandom(pool);
         const altRoot = Math.random() > 0.4 ? rootPc : Math.floor(Math.random() * 12);
-        const altCt = Theory.getChordType(altType);
-        distractors.add(`${Theory.pcToNote(altRoot, false)}${altCt.symbol}`);
+        distractors.add(`${Theory.pcToNote(altRoot, false)}${Theory.getChordType(altType).symbol}`);
       }
 
       return {
@@ -127,34 +123,29 @@ export const ModTrainer = {
 
       const distractors = new Set([correctLabel]);
       while (distractors.size < 4) {
-        const altSc = Theory.getScale(this.pickRandom(pool));
-        distractors.add(`${rootName} ${altSc.name}`);
+        distractors.add(`${rootName} ${Theory.getScale(this.pickRandom(pool)).name}`);
       }
-
-      const positions = ScaleEngine.getFretboardPositions(rootPc, sc.intervals, tuning, 12);
 
       return {
         type: 'scale',
-        prompt: `Qual é esta escala com tônica em ${rootName} (destacada em dourado)?`,
+        prompt: `Qual é esta escala com tônica em ${rootName} (marcada em dourado)?`,
         correctAnswer: correctLabel,
         options: this.shuffle([...distractors]),
         explanation: `${correctLabel} tem fórmula ${sc.formula}. Característica: ${sc.characteristic}.`,
-        visual: { kind: 'fretboard_scale', positions },
+        visual: { kind: 'fretboard_scale', positions: ScaleEngine.getFretboardPositions(rootPc, sc.intervals, tuning, 12) },
         play: () => {
           const base = 48 + rootPc;
-          AudioEngine.playSequence([...sc.intervals.map((iv) => base + iv), base + 12], { bpm: 135, subdivision: 2 });
+          AudioEngine.playSequence([...sc.intervals.map((iv) => base + iv), base + 12], { bpm: 135, subdivision: 2, cadence: 'asc' });
         },
       };
     }
 
-    // Interval question
     const s1 = Math.floor(Math.random() * Math.max(1, tuning.strings - 2));
     const f1 = 2 + Math.floor(Math.random() * 8);
     const midi1 = Theory.getFretMidi(s1, f1, tuning);
-    const targetIv = 1 + Math.floor(Math.random() * 11); // 1..11 semitones
+    const targetIv = 1 + Math.floor(Math.random() * 11);
     const midi2 = midi1 + targetIv;
 
-    // Place second note on next string or +2 strings cleanly
     let s2 = s1 + 1;
     let f2 = midi2 - tuning.midi[s2];
     if (f2 < 0 || f2 > 15) {
@@ -207,43 +198,41 @@ export const ModTrainer = {
       <div class="module-header">
         <div>
           <h2 class="module-title">Treinador Interativo (Quiz)</h2>
-          <p class="module-subtitle">Treine ouvido e reconhecimento visual no braço: notas, acordes, escalas e intervalos com histórico salvo.</p>
+          <p class="module-subtitle">Desenvolva leitura do braço e percepção auditiva com estatísticas salvas.</p>
         </div>
         <div class="action-bar">
-          <button id="quiz-save-session" class="btn btn-secondary btn-sm" ${total === 0 ? 'disabled' : ''}>Salvar Sessão</button>
-          <button id="quiz-reset-session" class="btn btn-ghost btn-sm">Reiniciar</button>
+          <button id="quiz-save-session" class="btn btn-secondary btn-sm" ${total === 0 ? 'disabled' : ''}>${icon('check', 14)} Salvar Sessão</button>
+          <button id="quiz-reset-session" class="btn btn-ghost btn-sm">${icon('rotateCcw', 14)} Reiniciar</button>
         </div>
       </div>
 
-      <!-- Mode Selector + Live HUD -->
       <section class="card">
-        <div class="controls-split">
-          <div class="pill-wrap">
+        <div class="controls-split" style="margin-bottom:0;">
+          <div class="segmented-tabs compact">
             ${[
-              ['note', 'Qual é esta nota?'],
-              ['chord', 'Qual é este acorde?'],
-              ['scale', 'Qual é esta escala?'],
-              ['interval', 'Qual é este intervalo?'],
-              ['mixed', '🎲 Modo Misto'],
+              ['note', 'Notas'],
+              ['chord', 'Acordes'],
+              ['scale', 'Escalas'],
+              ['interval', 'Intervalos'],
+              ['mixed', 'Misto'],
             ].map(([id, label]) => `
-              <button class="pill-btn pill-sm ${this.state.quizType === id ? 'active' : ''}" data-qtype="${id}">${label}</button>
+              <button class="seg-tab ${this.state.quizType === id ? 'active' : ''}" data-qtype="${id}">${id === 'mixed' ? icon('shuffle', 13) : ''} ${label}</button>
             `).join('')}
           </div>
           <div class="quiz-hud">
-            <span class="hud-chip good">✓ ${this.state.correct}</span>
-            <span class="hud-chip bad">✕ ${this.state.wrong}</span>
+            <span class="hud-chip good icon-label">${icon('check', 13)} ${this.state.correct}</span>
+            <span class="hud-chip bad icon-label">${icon('close', 13)} ${this.state.wrong}</span>
             <span class="hud-chip info">${acc}%</span>
-            <span class="hud-chip gold">🔥 ${this.state.streak}</span>
-            <span class="hud-chip mono">⏱ <span id="quiz-timer-val">${this.formatTime(this.state.elapsedSec)}</span></span>
+            <span class="hud-chip gold icon-label">${icon('flame', 13)} ${this.state.streak}</span>
+            <span class="hud-chip mono icon-label">${icon('clock', 13)} <span id="quiz-timer-val">${this.formatTime(this.state.elapsedSec)}</span></span>
           </div>
         </div>
       </section>
 
-      <!-- Active Question Card -->
       <section class="card quiz-stage-card">
         <div class="quiz-stage-head">
           <h3 class="section-title">${q.prompt}</h3>
-          <button id="quiz-replay-audio" class="btn btn-primary btn-sm">🔊 Ouvir Áudio</button>
+          <button id="quiz-replay-audio" class="btn btn-primary btn-sm">${icon('volumeOn', 14)} Ouvir Áudio</button>
         </div>
 
         <div class="quiz-visual-box" id="quiz-visual-mount"></div>
@@ -256,9 +245,7 @@ export const ModTrainer = {
               else if (opt === this.state.answered.selected) cls = 'opt-wrong';
             }
             return `
-              <button class="quiz-opt-btn ${cls}" data-opt="${opt}" ${this.state.answered ? 'disabled' : ''}>
-                ${opt}
-              </button>
+              <button class="quiz-opt-btn ${cls}" data-opt="${opt}" ${this.state.answered ? 'disabled' : ''}>${opt}</button>
             `;
           }).join('')}
         </div>
@@ -266,25 +253,24 @@ export const ModTrainer = {
         ${this.state.answered ? `
           <div class="quiz-feedback ${this.state.answered.isCorrect ? 'good' : 'bad'}">
             <div>
-              <strong>${this.state.answered.isCorrect ? '✓ Resposta Correta!' : `✕ Quase! A resposta correta é ${q.correctAnswer}`}</strong>
+              <strong class="icon-label">${icon(this.state.answered.isCorrect ? 'check' : 'close', 15)} ${this.state.answered.isCorrect ? 'Resposta Correta!' : `Correta: ${q.correctAnswer}`}</strong>
               <p class="small" style="margin-top:4px;">${q.explanation}</p>
             </div>
-            <button id="quiz-next" class="btn btn-primary">Próxima Pergunta →</button>
+            <button id="quiz-next" class="btn btn-primary">Próxima ${icon('arrowRight', 14)}</button>
           </div>
         ` : ''}
       </section>
 
-      <!-- Persistent Performance History -->
       <section class="card">
         <div class="card-header-row">
           <h3 class="section-title">Histórico de Desempenho</h3>
-          ${stats.sessions.length ? `<button id="quiz-clear-hist" class="btn btn-ghost btn-xs">Limpar Histórico</button>` : ''}
+          ${stats.sessions.length ? `<button id="quiz-clear-hist" class="btn btn-ghost btn-xs">${icon('trash', 12)} Limpar</button>` : ''}
         </div>
         <div class="stats-summary-grid">
-          <div class="stat-tile"><span>Total Acertos</span><strong class="text-green">${stats.totalCorrect}</strong></div>
-          <div class="stat-tile"><span>Total Erros</span><strong class="text-red">${stats.totalWrong}</strong></div>
-          <div class="stat-tile"><span>Precisão Geral</span><strong>${stats.totalCorrect + stats.totalWrong ? Math.round((stats.totalCorrect / (stats.totalCorrect + stats.totalWrong)) * 100) : 0}%</strong></div>
-          <div class="stat-tile"><span>Melhor Sequência</span><strong class="text-gold">🔥 ${stats.bestStreak}</strong></div>
+          <div class="stat-tile"><span>Acertos</span><strong class="text-green">${stats.totalCorrect}</strong></div>
+          <div class="stat-tile"><span>Erros</span><strong class="text-red">${stats.totalWrong}</strong></div>
+          <div class="stat-tile"><span>Precisão</span><strong>${stats.totalCorrect + stats.totalWrong ? Math.round((stats.totalCorrect / (stats.totalCorrect + stats.totalWrong)) * 100) : 0}%</strong></div>
+          <div class="stat-tile"><span>Melhor Sequência</span><strong class="text-gold">${stats.bestStreak}</strong></div>
         </div>
 
         ${stats.sessions.length ? `
@@ -305,14 +291,12 @@ export const ModTrainer = {
               `).join('')}
             </tbody>
           </table>
-        ` : `<p class="muted-text small" style="margin-top:12px;">Complete algumas perguntas e clique em <strong>Salvar Sessão</strong> para registrar sua evolução.</p>`}
+        ` : `<p class="muted-text small" style="margin-top:12px;">Clique em <strong>Salvar Sessão</strong> após responder algumas perguntas para registrar seu progresso.</p>`}
       </section>
     `;
 
-    // Render visual clue
     const visMount = container.querySelector('#quiz-visual-mount');
     if (q.visual.kind === 'chord' && q.visual.voicing) {
-      // Mask title in SVG until answered!
       const masked = { ...q.visual.voicing, symbol: this.state.answered ? q.visual.voicing.symbol : '???' };
       visMount.innerHTML = `<div class="svg-center">${renderVerticalChordSVG(masked)}</div>`;
     } else if (q.visual.kind === 'fretboard' || q.visual.kind === 'fretboard_scale') {
@@ -391,7 +375,7 @@ export const ModTrainer = {
       this.state.streak = 0;
       this.state.startedAt = Date.now();
       this.state.elapsedSec = 0;
-      app.toast('Sessão de treino salva no histórico!');
+      app.toast('Sessão salva no histórico!');
       this.render(container, app);
     });
 

@@ -1,7 +1,8 @@
 /**
  * Interactive 24-Fret SVG Guitar Fretboard Renderer
- * Supports 6 & 7 strings, zoom/movable window, notes/intervals/degrees/roots/selected modes,
- * CAGED overlays, Arpeggio link curves, Comparator highlighting, Heatmap glow, and audio click-to-play.
+ * Enhanced fret-by-fret separation: prominent 3D metallic fret wires,
+ * subtle alternating fret compartment shading, dedicated open-string nut column,
+ * top/bottom fret numbering, pearloid inlays, CAGED boxes, arpeggio links & heatmap.
  */
 
 import { Theory } from '../core/theory.js';
@@ -14,14 +15,15 @@ export function renderFretboard(container, options = {}) {
     startFret = 0,
     endFret = 24,
     displayMode = 'notes', // 'notes' | 'intervals' | 'degrees' | 'roots' | 'selected'
-    positions = [], // array of { stringIdx, fret, note, short, degree, color, isRoot, badge, customColor, ring }
-    selectedNotes = [], // array of { stringIdx, fret }
-    cagedBoxes = null, // array of { letter, startFret, endFret, color }
-    linkPaths = null, // array of { from: {stringIdx, fret}, to: {stringIdx, fret} }
-    heatmap = null, // { "s:f": count }
+    positions = [],
+    selectedNotes = [],
+    cagedBoxes = null,
+    linkPaths = null,
+    heatmap = null,
     interactive = true,
     onFretClick = null,
     activeMidi = null,
+    leftHanded = Theory.leftHanded,
     id = 'fretboard-svg',
   } = options;
 
@@ -29,43 +31,59 @@ export function renderFretboard(container, options = {}) {
   const visibleFrets = Math.max(4, endFret - startFret);
   const showNut = startFret === 0;
 
-  // Responsive SVG geometry
-  const padLeft = showNut ? 52 : 44;
-  const padRight = 24;
-  const padTop = cagedBoxes ? 38 : 26;
-  const padBottom = 34;
-  const stringGap = numStrings === 7 ? 32 : 36;
+  // Geometry with generous room for top & bottom fret numbers and nut column
+  const padLeft = leftHanded ? 28 : (showNut ? 64 : 46);
+  const padRight = leftHanded ? (showNut ? 64 : 46) : 24;
+  const padTop = cagedBoxes ? 48 : 34;
+  const padBottom = 38;
+  const stringGap = numStrings === 7 ? 33 : 37;
   const boardHeight = (numStrings - 1) * stringGap;
 
-  // Fret widths taper subtly toward higher frets when viewing full neck
-  const baseWidth = visibleFrets <= 8 ? 82 : visibleFrets <= 15 ? 58 : 44;
-  const fretXs = [padLeft];
-  let curX = padLeft;
+  // Compute fret widths; mirror horizontally when leftHanded is active!
+  const baseWidth = visibleFrets <= 8 ? 86 : visibleFrets <= 15 ? 60 : 48;
+  const widths = [];
   for (let f = startFret + 1; f <= endFret; f++) {
-    const taper = visibleFrets > 12 ? Math.max(0.74, 1 - (f - startFret) * 0.011) : 1;
-    curX += baseWidth * taper;
-    fretXs.push(curX);
+    const taper = visibleFrets > 12 ? Math.max(0.78, 1 - (f - startFret) * 0.009) : 1;
+    widths.push(baseWidth * taper);
   }
-  const totalWidth = Math.round(curX + padRight);
+  const boardW = widths.reduce((a, b) => a + b, 0);
+  const totalWidth = Math.round(padLeft + boardW + padRight);
   const totalHeight = Math.round(padTop + boardHeight + padBottom);
 
-  // Helper: map stringIdx (0=low, N-1=high) to Y (top=high, bottom=low)
+  // fretXs[0] is the nut/start edge; fretXs[i] is the edge after fret (startFret + i)
+  const fretXs = [];
+  if (!leftHanded) {
+    let x = padLeft;
+    fretXs.push(x);
+    for (const w of widths) {
+      x += w;
+      fretXs.push(x);
+    }
+  } else {
+    let x = padLeft + boardW;
+    fretXs.push(x);
+    for (const w of widths) {
+      x -= w;
+      fretXs.push(x);
+    }
+  }
+
+  const boardLeftX = padLeft;
+  const boardRightX = padLeft + boardW;
+  const curX = boardRightX;
+
   const stringY = (sIdx) => padTop + (numStrings - 1 - sIdx) * stringGap;
   const fretCenterX = (f) => {
-    if (f === 0 && showNut) return padLeft - 18;
+    if (f === 0 && showNut) return leftHanded ? boardRightX + 22 : boardLeftX - 22;
     const idx = f - startFret;
     if (idx <= 0 || idx >= fretXs.length) return -999;
     return (fretXs[idx - 1] + fretXs[idx]) / 2;
   };
 
-  // Lookup maps
   const posMap = new Map();
-  positions.forEach((p) => {
-    posMap.set(`${p.stringIdx}:${p.fret}`, p);
-  });
+  positions.forEach((p) => posMap.set(`${p.stringIdx}:${p.fret}`, p));
   const selSet = new Set(selectedNotes.map((s) => `${s.stringIdx}:${s.fret}`));
 
-  // Heatmap normalization
   let maxHeat = 1;
   if (heatmap) {
     Object.values(heatmap).forEach((v) => {
@@ -75,23 +93,48 @@ export function renderFretboard(container, options = {}) {
 
   const markers = Theory.data.fretMarkers;
   const doubleMarkers = Theory.data.doubleFretMarkers;
+  const boardTop = padTop - 12;
+  const boardFullH = boardHeight + 24;
 
-  let svg = `<svg id="${id}" class="fretboard-svg" viewBox="0 0 ${totalWidth} ${totalHeight}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Braço interativo da guitarra">`;
+  let svg = `<svg id="${id}" class="fretboard-svg" viewBox="0 0 ${totalWidth} ${totalHeight}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Braço interativo da guitarra com casas separadas por trastes">`;
   svg += `<defs>
     <linearGradient id="woodGrad_${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#2a1d17"/>
-      <stop offset="50%" stop-color="#1e1410"/>
-      <stop offset="100%" stop-color="#160f0c"/>
+      <stop offset="0%" stop-color="#2c1f19"/>
+      <stop offset="50%" stop-color="#201611"/>
+      <stop offset="100%" stop-color="#170f0c"/>
     </linearGradient>
-    <linearGradient id="fretWire_${id}" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#64748b"/>
-      <stop offset="50%" stop-color="#e2e8f0"/>
-      <stop offset="100%" stop-color="#475569"/>
+    <linearGradient id="fretMetal_${id}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="45%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="nutGrad_${id}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
     </linearGradient>
   </defs>`;
 
-  // Wood board background
-  svg += `<rect x="${padLeft}" y="${padTop - 10}" width="${curX - padLeft}" height="${boardHeight + 20}" rx="6" fill="url(#woodGrad_${id})" stroke="#3f2d24" stroke-width="1.5"/>`;
+  // Dedicated Open-String ("0") column background when nut is visible
+  if (showNut) {
+    const nutColX = leftHanded ? boardRightX + 4 : boardLeftX - 38;
+    svg += `<rect x="${nutColX}" y="${boardTop}" width="34" height="${boardFullH}" rx="4" fill="#0f172a" fill-opacity="0.55" stroke="#334155" stroke-width="1"/>`;
+  }
+
+  // Main Rosewood/Ebony fretboard base
+  svg += `<rect x="${boardLeftX}" y="${boardTop}" width="${boardW}" height="${boardFullH}" rx="6" fill="url(#woodGrad_${id})" stroke="#4a352b" stroke-width="1.6"/>`;
+
+  // Individual fret compartment shading (makes every fret visually distinct!)
+  for (let i = 1; i < fretXs.length; i++) {
+    const f = startFret + i;
+    const x1 = Math.min(fretXs[i - 1], fretXs[i]);
+    const x2 = Math.max(fretXs[i - 1], fretXs[i]);
+    const fw = x2 - x1;
+    const isMarked = markers.includes(f);
+    const fill = isMarked ? '#f59e0b' : (f % 2 === 0 ? '#ffffff' : '#000000');
+    const opacity = isMarked ? '0.07' : (f % 2 === 0 ? '0.03' : '0.08');
+    svg += `<rect x="${x1}" y="${boardTop + 1}" width="${fw}" height="${boardFullH - 2}" fill="${fill}" fill-opacity="${opacity}"/>`;
+  }
 
   // CAGED region shading overlays
   if (cagedBoxes && cagedBoxes.length) {
@@ -99,10 +142,12 @@ export function renderFretboard(container, options = {}) {
       const fStart = Math.max(startFret, box.startFret);
       const fEnd = Math.min(endFret, box.endFret);
       if (fEnd < startFret || fStart > endFret) return;
-      const x1 = fStart === 0 && showNut ? padLeft : fretXs[Math.max(0, fStart - startFret - 1)] || padLeft;
-      const x2 = fretXs[Math.min(fretXs.length - 1, fEnd - startFret)] || curX;
-      svg += `<rect x="${x1}" y="${padTop - 10}" width="${Math.max(12, x2 - x1)}" height="${boardHeight + 20}" fill="${box.color}" fill-opacity="0.11" stroke="${box.color}" stroke-opacity="0.45" stroke-width="1.5" rx="4"/>`;
-      svg += `<text x="${(x1 + x2) / 2}" y="${padTop - 16}" fill="${box.color}" font-size="11" font-weight="700" text-anchor="middle" font-family="Inter, sans-serif">${box.name}</text>`;
+      const edgeA = fStart === 0 && showNut ? fretXs[0] : fretXs[Math.max(0, fStart - startFret - 1)] ?? fretXs[0];
+      const edgeB = fretXs[Math.min(fretXs.length - 1, fEnd - startFret)] ?? fretXs[fretXs.length - 1];
+      const x1 = Math.min(edgeA, edgeB);
+      const x2 = Math.max(edgeA, edgeB);
+      svg += `<rect x="${x1}" y="${boardTop}" width="${Math.max(12, x2 - x1)}" height="${boardFullH}" fill="${box.color}" fill-opacity="0.12" stroke="${box.color}" stroke-opacity="0.55" stroke-width="1.6" rx="4"/>`;
+      svg += `<text x="${(x1 + x2) / 2}" y="${boardTop - 16}" fill="${box.color}" font-size="11" font-weight="800" text-anchor="middle" font-family="Inter, sans-serif">${box.name}</text>`;
     });
   }
 
@@ -123,47 +168,65 @@ export function renderFretboard(container, options = {}) {
     }
   }
 
-  // Nut or left edge
+  // Nut (Pestana) — bold ivory divider separating open strings from fret 1
   if (showNut) {
-    svg += `<rect x="${padLeft - 5}" y="${padTop - 10}" width="7" height="${boardHeight + 20}" rx="2" fill="#f1f5f9" stroke="#94a3b8" stroke-width="0.8"/>`;
+    const nutX = leftHanded ? boardRightX - 2 : boardLeftX - 6;
+    svg += `<rect x="${nutX}" y="${boardTop - 1}" width="8" height="${boardFullH + 2}" rx="2" fill="url(#nutGrad_${id})" stroke="#64748b" stroke-width="1"/>`;
+  } else {
+    const borderX = leftHanded ? boardRightX - 2 : boardLeftX - 2;
+    svg += `<rect x="${borderX}" y="${boardTop}" width="3.5" height="${boardFullH}" fill="url(#fretMetal_${id})"/>`;
   }
 
-  // Fret wires & inlays & fret numbers
+  // Prominent 3D Metallic Fret Wires + Pearloid Inlays + Top & Bottom Fret Numbers
   for (let i = 1; i < fretXs.length; i++) {
     const f = startFret + i;
     const x = fretXs[i];
-    svg += `<line x1="${x}" y1="${padTop - 10}" x2="${x}" y2="${padTop + boardHeight + 10}" stroke="url(#fretWire_${id})" stroke-width="2.4"/>`;
-
     const cx = (fretXs[i - 1] + x) / 2;
-    // Pearloid fret inlays
-    if (markers.includes(f)) {
+    const isHighlightFret = markers.includes(f);
+
+    svg += `<line x1="${x + 1.8}" y1="${boardTop}" x2="${x + 1.8}" y2="${boardTop + boardFullH}" stroke="#090d16" stroke-opacity="0.78" stroke-width="2"/>`;
+    svg += `<rect x="${x - 1.7}" y="${boardTop}" width="3.4" height="${boardFullH}" rx="1" fill="url(#fretMetal_${id})"/>`;
+
+    if (isHighlightFret) {
       if (doubleMarkers.includes(f)) {
-        svg += `<circle cx="${cx}" cy="${padTop + boardHeight * 0.28}" r="5.5" fill="#cbd5e1" fill-opacity="0.35"/>`;
-        svg += `<circle cx="${cx}" cy="${padTop + boardHeight * 0.72}" r="5.5" fill="#cbd5e1" fill-opacity="0.35"/>`;
+        svg += `<circle cx="${cx}" cy="${padTop + boardHeight * 0.27}" r="5.5" fill="#e2e8f0" fill-opacity="0.32" stroke="#ffffff" stroke-opacity="0.18"/>`;
+        svg += `<circle cx="${cx}" cy="${padTop + boardHeight * 0.73}" r="5.5" fill="#e2e8f0" fill-opacity="0.32" stroke="#ffffff" stroke-opacity="0.18"/>`;
       } else {
-        svg += `<circle cx="${cx}" cy="${padTop + boardHeight / 2}" r="6" fill="#cbd5e1" fill-opacity="0.35"/>`;
+        svg += `<circle cx="${cx}" cy="${padTop + boardHeight / 2}" r="6" fill="#e2e8f0" fill-opacity="0.32" stroke="#ffffff" stroke-opacity="0.18"/>`;
       }
     }
 
-    // Fret number label at bottom
-    const isHighlightFret = markers.includes(f);
-    svg += `<text x="${cx}" y="${padTop + boardHeight + 26}" fill="${isHighlightFret ? '#f59e0b' : '#94a3b8'}" font-size="11" font-weight="${isHighlightFret ? '700' : '500'}" text-anchor="middle" font-family="JetBrains Mono, monospace">${f}</text>`;
+    if (!cagedBoxes) {
+      svg += `<text x="${cx}" y="${boardTop - 6}" fill="${isHighlightFret ? '#f59e0b' : '#64748b'}" font-size="10.5" font-weight="${isHighlightFret ? '800' : '600'}" text-anchor="middle" font-family="JetBrains Mono, monospace">${f}</text>`;
+    }
+
+    if (isHighlightFret) {
+      svg += `<rect x="${cx - 12}" y="${boardTop + boardFullH + 6}" width="24" height="17" rx="4" fill="#f59e0b" fill-opacity="0.18" stroke="#f59e0b" stroke-opacity="0.45" stroke-width="1"/>`;
+    }
+    svg += `<text x="${cx}" y="${boardTop + boardFullH + 18}" fill="${isHighlightFret ? '#f59e0b' : '#94a3b8'}" font-size="11" font-weight="${isHighlightFret ? '800' : '600'}" text-anchor="middle" font-family="JetBrains Mono, monospace">${f}</text>`;
   }
 
-  // Nut "0" label
+  // Open String "0" label
   if (showNut) {
-    svg += `<text x="${padLeft - 18}" y="${padTop + boardHeight + 26}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="JetBrains Mono, monospace">0</text>`;
+    const openCx = fretCenterX(0);
+    svg += `<text x="${openCx}" y="${boardTop + boardFullH + 18}" fill="#94a3b8" font-size="10.5" font-weight="700" text-anchor="middle" font-family="JetBrains Mono, monospace">0</text>`;
+    if (!cagedBoxes) {
+      svg += `<text x="${openCx}" y="${boardTop - 6}" fill="#64748b" font-size="9.5" font-weight="700" text-anchor="middle" font-family="Inter, sans-serif">SOLTA</text>`;
+    }
   }
 
-  // Strings (graduated thickness from thin high E to thick wound low E/B)
+  // Strings (graduated thickness from thin high E to wound low E/B)
+  const strStartX = leftHanded ? boardLeftX : (boardLeftX - (showNut ? 36 : 0));
+  const strEndX = leftHanded ? (boardRightX + (showNut ? 36 : 0)) : boardRightX;
+  const labelX = leftHanded ? totalWidth - 14 : 14;
   for (let s = 0; s < numStrings; s++) {
     const y = stringY(s);
-    const thickness = 1.1 + ((numStrings - 1 - s) / (numStrings - 1)) * 2.3;
+    const thickness = 1.15 + ((numStrings - 1 - s) / (numStrings - 1)) * 2.35;
     const isWound = s < numStrings - 2;
-    svg += `<line x1="${padLeft - (showNut ? 4 : 0)}" y1="${y}" x2="${curX}" y2="${y}" stroke="${isWound ? '#cbd5e1' : '#e2e8f0'}" stroke-opacity="0.72" stroke-width="${thickness.toFixed(2)}"/>`;
+    svg += `<line x1="${strStartX}" y1="${y + 1}" x2="${strEndX}" y2="${y + 1}" stroke="#000000" stroke-opacity="0.45" stroke-width="${thickness.toFixed(2)}"/>`;
+    svg += `<line x1="${strStartX}" y1="${y}" x2="${strEndX}" y2="${y}" stroke="${isWound ? '#cbd5e1' : '#f1f5f9'}" stroke-opacity="0.82" stroke-width="${thickness.toFixed(2)}"/>`;
 
-    // String open tuning label on far left
-    svg += `<text x="${showNut ? 12 : 16}" y="${y + 4}" fill="#94a3b8" font-size="11.5" font-weight="700" text-anchor="middle" font-family="JetBrains Mono, monospace">${tuning.notes[s]}</text>`;
+    svg += `<text x="${labelX}" y="${y + 4}" fill="#cbd5e1" font-size="12" font-weight="800" text-anchor="middle" font-family="JetBrains Mono, monospace">${tuning.notes[s]}</text>`;
   }
 
   // Arpeggio / Shape Linking connectors
@@ -176,12 +239,12 @@ export function renderFretboard(container, options = {}) {
       if (x1 > 0 && x2 > 0) {
         const midX = (x1 + x2) / 2;
         const ctrlY = Math.min(y1, y2) - 14;
-        svg += `<path d="M ${x1} ${y1} Q ${midX} ${ctrlY} ${x2} ${y2}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="4 3" stroke-opacity="0.88"/>`;
+        svg += `<path d="M ${x1} ${y1} Q ${midX} ${ctrlY} ${x2} ${y2}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="4 3" stroke-opacity="0.9"/>`;
       }
     });
   }
 
-  // Interactive click targets + Note markers
+  // Interactive cells + Note markers
   for (let s = 0; s < numStrings; s++) {
     const y = stringY(s);
     for (let f = startFret; f <= endFret; f++) {
@@ -196,19 +259,16 @@ export function renderFretboard(container, options = {}) {
       const pc = Theory.mod12(midi);
       const isPlaying = activeMidi !== null && activeMidi === midi;
 
-      // Decide if dot should be rendered
       let showDot = false;
       let fill = '#3b82f6';
       let label = Theory.pcToNote(pc, Theory.preferFlats);
       let isRoot = false;
-      let strokeColor = '#0f172a';
       let ring = false;
 
       if (displayMode === 'selected') {
         if (isSelected) {
           showDot = true;
           fill = '#f59e0b';
-          label = Theory.pcToNote(pc, Theory.preferFlats);
         }
       } else if (pos) {
         if (displayMode === 'roots' && !pos.isRoot) {
@@ -230,22 +290,21 @@ export function renderFretboard(container, options = {}) {
 
       if (interactive) {
         svg += `<g class="fb-cell" data-s="${s}" data-f="${f}" data-midi="${midi}" data-pc="${pc}" style="cursor:pointer;">`;
-        // Invisible generous hit target
-        svg += `<rect x="${cx - 16}" y="${y - stringGap / 2 + 2}" width="32" height="${stringGap - 4}" fill="transparent"/>`;
+        svg += `<title>${Theory.pcToNote(pc, Theory.preferFlats)} · ${numStrings - s}ª corda · Casa ${f}</title>`;
+        svg += `<rect x="${cx - 17}" y="${y - stringGap / 2 + 2}" width="34" height="${stringGap - 4}" fill="transparent"/>`;
       }
 
       if (showDot) {
         const radius = isRoot || isSelected ? 12.5 : 11;
         if (isPlaying) {
-          svg += `<circle cx="${cx}" cy="${y}" r="${radius + 5}" fill="none" stroke="#fbbf24" stroke-width="2.5" opacity="0.9"/>`;
+          svg += `<circle cx="${cx}" cy="${y}" r="${radius + 5}" fill="none" stroke="#fbbf24" stroke-width="2.5" opacity="0.95"/>`;
         }
         if (isRoot || ring) {
-          svg += `<circle cx="${cx}" cy="${y}" r="${radius + 2.5}" fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.85"/>`;
+          svg += `<circle cx="${cx}" cy="${y}" r="${radius + 2.5}" fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.88"/>`;
         }
-        svg += `<circle cx="${cx}" cy="${y}" r="${radius}" fill="${fill}" stroke="${strokeColor}" stroke-width="1.5"/>`;
+        svg += `<circle cx="${cx}" cy="${y}" r="${radius}" fill="${fill}" stroke="#090d16" stroke-width="1.6"/>`;
         svg += `<text x="${cx}" y="${y + 3.8}" fill="${isRoot || fill === '#f59e0b' || fill === '#eab308' ? '#090d16' : '#ffffff'}" font-size="${label.length > 2 ? '8.5' : '10'}" font-weight="800" text-anchor="middle" font-family="Inter, sans-serif" pointer-events="none">${label}</text>`;
       } else if (interactive) {
-        // Hover preview ghost dot
         svg += `<circle class="fb-hover-dot" cx="${cx}" cy="${y}" r="9" fill="#f59e0b" fill-opacity="0"/>`;
       }
 
@@ -265,14 +324,12 @@ export function renderFretboard(container, options = {}) {
         const fret = Number(el.dataset.f);
         const midi = Number(el.dataset.midi);
         const pc = Number(el.dataset.pc);
-        AudioEngine.playNote(midi, 1.3, 0, 0.8);
+        AudioEngine.playNote(midi, 1.3, 0, 0.82);
         Storage.recordFretHeat(sIdx, fret, 2);
 
-        // Quick visual pulse
         const circle = el.querySelector('circle:last-of-type');
         if (circle) {
-          circle.style.transformOrigin = 'center';
-          circle.animate([{ opacity: 1 }, { opacity: 0.4 }, { opacity: 1 }], { duration: 240 });
+          circle.animate([{ opacity: 1 }, { opacity: 0.4 }, { opacity: 1 }], { duration: 220 });
         }
 
         if (onFretClick) {

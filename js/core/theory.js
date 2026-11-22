@@ -11,6 +11,7 @@ export const Theory = {
   progressionsData: null,
   currentTuningId: 'standard',
   preferFlats: false,
+  leftHanded: false,
 
   async init() {
     const [theoryRes, chordsRes, scalesRes, progRes] = await Promise.all([

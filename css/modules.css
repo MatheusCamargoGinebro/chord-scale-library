@@ -159,6 +159,309 @@
   gap: 16px;
 }
 
+.chord-views-clean {
+  display: grid;
+  grid-template-columns: minmax(250px, 310px) 1fr;
+  gap: 16px;
+}
+
+/* Per-chord shape stepper & Progressions / Composer cards */
+.pchord-diagram-click,
+.ccard-diagram {
+  cursor: pointer;
+  padding: 4px 0;
+  transition: transform var(--transition);
+}
+
+.pchord-diagram-click:hover,
+.ccard-diagram:hover {
+  transform: scale(1.03);
+}
+
+.shape-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.stepper-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.pchord-shape-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cof-tab-layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  align-items: center;
+}
+
+.composer-chords-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.composer-chord-card {
+  background: var(--bg-subcard);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.composer-chord-card:hover {
+  border-color: var(--border-strong);
+}
+
+.composer-chord-card.playing {
+  border-color: var(--accent-gold);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.composer-chord-card.editing-cadence,
+.prog-chord-card.editing-cadence {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
+}
+
+.composer-chord-card.dragging {
+  opacity: 0.45;
+  transform: scale(0.97);
+}
+
+.composer-chord-card.drag-over {
+  border: 2px dashed var(--accent-gold);
+  background: var(--accent-gold-soft);
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  display: inline-flex;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.ccard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.ccard-name {
+  flex: 1;
+  text-align: left;
+  color: var(--accent-gold);
+}
+
+/* Momentary Per-Chord Cadence Editor Panel */
+.cadence-editor-panel {
+  margin-top: 14px;
+  margin-bottom: 14px;
+  border-color: rgba(56, 189, 248, 0.42);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.06), var(--bg-subcard));
+}
+
+.cadence-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.cadence-editor-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.strum-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(64px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.strum-edit-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px 4px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.strum-edit-btn:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
+.strum-edit-btn.is-rest {
+  opacity: 0.58;
+}
+
+.strum-code-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* Fullscreen Stage / Focus Mode Overlay */
+.stage-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--bg-app);
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeSlide 0.2s ease-out;
+}
+
+.stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.stage-title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--accent-gold);
+}
+
+.stage-beat-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.beat-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  transition: all 0.08s ease;
+}
+
+.beat-dot.on {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #090d16;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.65);
+  transform: scale(1.12);
+}
+
+.stage-sections-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stage-sec-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stage-chords-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow-x: auto;
+  align-items: stretch;
+  padding: 8px 4px 16px;
+  scrollbar-width: thin;
+}
+
+.stage-chord-card {
+  flex: 1 0 205px;
+  max-width: 260px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.16s ease;
+}
+
+.stage-chord-card .chord-svg-vertical {
+  max-width: 185px;
+  margin: 0 auto;
+}
+
+.stage-chord-card.playing {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28), 0 14px 36px rgba(245, 158, 11, 0.2);
+  transform: scale(1.03);
+}
+
+.stage-chord-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
 .diagram-box {
   display: flex;
   flex-direction: column;
@@ -961,7 +1264,9 @@
 
 /* Responsive adjustments */
 @media (max-width: 1120px) {
-  .chord-views-grid {
+  .chord-views-grid,
+  .chord-views-clean,
+  .cof-tab-layout {
     grid-template-columns: 1fr;
   }
   .prog-top-grid {

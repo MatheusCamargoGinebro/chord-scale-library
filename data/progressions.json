@@ -1,0 +1,204 @@
+{
+  "genres": ["Pop", "Rock", "Blues", "Jazz", "Metal", "Funk", "Fusion"],
+  "progressions": [
+    {
+      "id": "pop_1564",
+      "name": "Axis Pop (I - V - vi - IV)",
+      "genre": "Pop",
+      "numerals": "I - V - vi - IV",
+      "bpm": 116,
+      "description": "A progressão mais famosa do Pop e Rock moderno — emocional e cativante.",
+      "chords": [
+        { "degree": 0, "type": "maj", "roman": "I" },
+        { "degree": 7, "type": "maj", "roman": "V" },
+        { "degree": 9, "type": "min", "roman": "vi" },
+        { "degree": 5, "type": "maj", "roman": "IV" }
+      ]
+    },
+    {
+      "id": "pop_1645",
+      "name": "Clássica 50s (I - vi - IV - V)",
+      "genre": "Pop",
+      "numerals": "I - vi - IV - V",
+      "bpm": 108,
+      "description": "Cadência nostálgica e direta, base de centenas de baladas.",
+      "chords": [
+        { "degree": 0, "type": "maj", "roman": "I" },
+        { "degree": 9, "type": "min", "roman": "vi" },
+        { "degree": 5, "type": "maj", "roman": "IV" },
+        { "degree": 7, "type": "maj", "roman": "V" }
+      ]
+    },
+    {
+      "id": "rock_145",
+      "name": "Classic Rock (I - IV - V - IV)",
+      "genre": "Rock",
+      "numerals": "I - IV - V - IV",
+      "bpm": 124,
+      "description": "A espinha dorsal do Rock n' Roll clássico e Garage Rock.",
+      "chords": [
+        { "degree": 0, "type": "maj", "roman": "I" },
+        { "degree": 5, "type": "maj", "roman": "IV" },
+        { "degree": 7, "type": "maj", "roman": "V" },
+        { "degree": 5, "type": "maj", "roman": "IV" }
+      ]
+    },
+    {
+      "id": "rock_mixolydian",
+      "name": "Classic Rock Mixolídio (I - bVII - IV - I)",
+      "genre": "Rock",
+      "numerals": "I - bVII - IV - I",
+      "bpm": 120,
+      "description": "Cadência modal poderosa estilo AC/DC, Sweet Home Alabama e Guns N' Roses.",
+      "chords": [
+        { "degree": 0, "type": "maj", "roman": "I" },
+        { "degree": 10, "type": "maj", "roman": "bVII" },
+        { "degree": 5, "type": "maj", "roman": "IV" },
+        { "degree": 0, "type": "maj", "roman": "I" }
+      ]
+    },
+    {
+      "id": "blues_12bar",
+      "name": "Blues Dominante (I7 - IV7 - I7 - V7 - IV7 - I7)",
+      "genre": "Blues",
+      "numerals": "I7 - IV7 - I7 - V7 - IV7 - I7",
+      "bpm": 96,
+      "description": "A forma essencial do Blues tradicional com acordes dominantes.",
+      "chords": [
+        { "degree": 0, "type": "7", "roman": "I7" },
+        { "degree": 5, "type": "7", "roman": "IV7" },
+        { "degree": 0, "type": "7", "roman": "I7" },
+        { "degree": 7, "type": "7", "roman": "V7" },
+        { "degree": 5, "type": "7", "roman": "IV7" },
+        { "degree": 0, "type": "7", "roman": "I7" }
+      ]
+    },
+    {
+      "id": "blues_minor",
+      "name": "Minor Blues (i7 - iv7 - i7 - bVI7 - V7#9)",
+      "genre": "Blues",
+      "numerals": "i7 - iv7 - i7 - bVI7 - V7#9",
+      "bpm": 88,
+      "description": "Blues menor intenso estilo Thrill Is Gone com tensão alterada.",
+      "chords": [
+        { "degree": 0, "type": "m7", "roman": "i7" },
+        { "degree": 5, "type": "m7", "roman": "iv7" },
+        { "degree": 0, "type": "m7", "roman": "i7" },
+        { "degree": 8, "type": "7", "roman": "bVI7" },
+        { "degree": 7, "type": "7#9", "roman": "V7#9" }
+      ]
+    },
+    {
+      "id": "jazz_251",
+      "name": "Jazz Cadence (ii7 - V7 - Imaj7 - VI7)",
+      "genre": "Jazz",
+      "numerals": "ii7 - V7 - Imaj7 - VI7",
+      "bpm": 128,
+      "description": "O coração da harmonia Jazz com turnaround de dominante secundária.",
+      "chords": [
+        { "degree": 2, "type": "m7", "roman": "ii7" },
+        { "degree": 7, "type": "7", "roman": "V7" },
+        { "degree": 0, "type": "maj7", "roman": "Imaj7" },
+        { "degree": 9, "type": "7", "roman": "VI7" }
+      ]
+    },
+    {
+      "id": "jazz_251_minor",
+      "name": "Jazz Menor (iiø7 - V7b9 - im7 - im6)",
+      "genre": "Jazz",
+      "numerals": "iiø7 - V7b9 - im7 - im6",
+      "bpm": 115,
+      "description": "Cadência ii-V-i menor sofisticada com resolução meio-diminuta e b9.",
+      "chords": [
+        { "degree": 2, "type": "m7b5", "roman": "iiø7" },
+        { "degree": 7, "type": "7b9", "roman": "V7b9" },
+        { "degree": 0, "type": "m7", "roman": "im7" },
+        { "degree": 0, "type": "m6", "roman": "im6" }
+      ]
+    },
+    {
+      "id": "metal_aeolian",
+      "name": "Epic Metal (i - bVI - bVII - i)",
+      "genre": "Metal",
+      "numerals": "i - bVI - bVII - i",
+      "bpm": 146,
+      "description": "Cadência épica estilo Iron Maiden e Power/Heavy Metal.",
+      "chords": [
+        { "degree": 0, "type": "5", "roman": "i5" },
+        { "degree": 8, "type": "5", "roman": "bVI5" },
+        { "degree": 10, "type": "5", "roman": "bVII5" },
+        { "degree": 0, "type": "5", "roman": "i5" }
+      ]
+    },
+    {
+      "id": "metal_phrygian",
+      "name": "Dark Phrygian Metal (i - bII - bVII - i)",
+      "genre": "Metal",
+      "numerals": "i - bII - bVII - i",
+      "bpm": 152,
+      "description": "Riff sombrio e agressivo explorando o semitom característico do modo Frígio.",
+      "chords": [
+        { "degree": 0, "type": "min", "roman": "i" },
+        { "degree": 1, "type": "maj", "roman": "bII" },
+        { "degree": 10, "type": "min", "roman": "bvii" },
+        { "degree": 0, "type": "min", "roman": "i" }
+      ]
+    },
+    {
+      "id": "funk_dorian",
+      "name": "Dorian Funk Groove (i7 - IV9 - i7 - IV13)",
+      "genre": "Funk",
+      "numerals": "i7 - IV9 - i7 - IV13",
+      "bpm": 108,
+      "description": "Vamp clássico de Funk e Soul explorando a 6ª maior do modo Dórico.",
+      "chords": [
+        { "degree": 0, "type": "m7", "roman": "i7" },
+        { "degree": 5, "type": "9", "roman": "IV9" },
+        { "degree": 0, "type": "m9", "roman": "i9" },
+        { "degree": 5, "type": "13", "roman": "IV13" }
+      ]
+    },
+    {
+      "id": "funk_james",
+      "name": "Funk Turnaround (I9 - IV9 - #IVdim7 - V9)",
+      "genre": "Funk",
+      "numerals": "I9 - IV9 - #IVdim7 - V9",
+      "bpm": 112,
+      "description": "Groove sincopado com passagem cromática diminuta.",
+      "chords": [
+        { "degree": 0, "type": "9", "roman": "I9" },
+        { "degree": 5, "type": "9", "roman": "IV9" },
+        { "degree": 6, "type": "dim7", "roman": "#IVdim7" },
+        { "degree": 7, "type": "9", "roman": "V9" }
+      ]
+    },
+    {
+      "id": "fusion_lydian",
+      "name": "Lydian Fusion (Imaj7#11 - II7 - Imaj9 - bVII13)",
+      "genre": "Fusion",
+      "numerals": "Imaj7#11 - II7 - Imaj9 - bVII13",
+      "bpm": 118,
+      "description": "Harmonia moderna aberta com brilho lídio e empréstimo modal.",
+      "chords": [
+        { "degree": 0, "type": "maj7#11", "roman": "Imaj7#11" },
+        { "degree": 2, "type": "7", "roman": "II7" },
+        { "degree": 0, "type": "maj9", "roman": "Imaj9" },
+        { "degree": 10, "type": "13", "roman": "bVII13" }
+      ]
+    },
+    {
+      "id": "fusion_neosoul",
+      "name": "Neo-Soul / Fusion (IVmaj9 - iii7 - ii9 - Imaj9)",
+      "genre": "Fusion",
+      "numerals": "IVmaj9 - iii7 - ii9 - Imaj9",
+      "bpm": 92,
+      "description": "Descida harmônica exuberante com voice leading suave por graus conjuntos.",
+      "chords": [
+        { "degree": 5, "type": "maj9", "roman": "IVmaj9" },
+        { "degree": 4, "type": "m7", "roman": "iii7" },
+        { "degree": 2, "type": "m9", "roman": "ii9" },
+        { "degree": 0, "type": "maj9", "roman": "Imaj9" }
+      ]
+    }
+  ]
+}

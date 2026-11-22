@@ -1,0 +1,369 @@
+{
+  "chordTypes": [
+    {
+      "id": "maj",
+      "symbol": "",
+      "name": "Maior",
+      "category": "Tríades",
+      "quality": "Maior",
+      "intervals": [0, 4, 7],
+      "required": [0, 4, 7],
+      "formula": "1 - 3 - 5",
+      "description": "Tríade maior estável, brilhante e resolutiva."
+    },
+    {
+      "id": "min",
+      "symbol": "m",
+      "name": "Menor",
+      "category": "Tríades",
+      "quality": "Menor",
+      "intervals": [0, 3, 7],
+      "required": [0, 3, 7],
+      "formula": "1 - b3 - 5",
+      "description": "Tríade menor melancólica e introspectiva."
+    },
+    {
+      "id": "5",
+      "symbol": "5",
+      "name": "Power Chord (5ª)",
+      "category": "Tríades",
+      "quality": "Neutro",
+      "intervals": [0, 7],
+      "required": [0, 7],
+      "formula": "1 - 5",
+      "description": "Acorde de quinta sem terça — essencial para Rock e Metal."
+    },
+    {
+      "id": "sus2",
+      "symbol": "sus2",
+      "name": "Suspenso 2",
+      "category": "Suspensos",
+      "quality": "Suspenso",
+      "intervals": [0, 2, 7],
+      "required": [0, 2, 7],
+      "formula": "1 - 2 - 5",
+      "description": "Sonoridade aberta e moderna substituindo a terça pela 2ª maior."
+    },
+    {
+      "id": "sus4",
+      "symbol": "sus4",
+      "name": "Suspenso 4",
+      "category": "Suspensos",
+      "quality": "Suspenso",
+      "intervals": [0, 5, 7],
+      "required": [0, 5, 7],
+      "formula": "1 - 4 - 5",
+      "description": "Cria tensão suave que pede resolução para a terça maior ou menor."
+    },
+    {
+      "id": "dim",
+      "symbol": "dim",
+      "name": "Diminuto",
+      "category": "Tríades",
+      "quality": "Diminuto",
+      "intervals": [0, 3, 6],
+      "required": [0, 3, 6],
+      "formula": "1 - b3 - b5",
+      "description": "Tríade simétrica tensa com trítono, usada como acorde de passagem."
+    },
+    {
+      "id": "aug",
+      "symbol": "aug",
+      "name": "Aumentado",
+      "category": "Tríades",
+      "quality": "Aumentado",
+      "intervals": [0, 4, 8],
+      "required": [0, 4, 8],
+      "formula": "1 - 3 - #5",
+      "description": "Tríade simétrica de terças maiores com sonoridade suspensa e cinematográfica."
+    },
+    {
+      "id": "7",
+      "symbol": "7",
+      "name": "Dominante 7",
+      "category": "Tétrades (7ª)",
+      "quality": "Dominante",
+      "intervals": [0, 4, 7, 10],
+      "required": [0, 4, 10],
+      "formula": "1 - 3 - 5 - b7",
+      "description": "Acorde dominante clássico do Blues, Jazz e cadências V-I."
+    },
+    {
+      "id": "maj7",
+      "symbol": "maj7",
+      "name": "Maior com 7ª Maior",
+      "category": "Tétrades (7ª)",
+      "quality": "Maior",
+      "intervals": [0, 4, 7, 11],
+      "required": [0, 4, 11],
+      "formula": "1 - 3 - 5 - 7",
+      "description": "Acorde sofisticado, quente e suave — marca registrada do Jazz e Bossa Nova."
+    },
+    {
+      "id": "m7",
+      "symbol": "m7",
+      "name": "Menor com 7ª",
+      "category": "Tétrades (7ª)",
+      "quality": "Menor",
+      "intervals": [0, 3, 7, 10],
+      "required": [0, 3, 10],
+      "formula": "1 - b3 - 5 - b7",
+      "description": "Versátil e aveludado — base do ii-V-I, Funk, Soul e Pop."
+    },
+    {
+      "id": "mMaj7",
+      "symbol": "m(maj7)",
+      "name": "Menor com 7ª Maior",
+      "category": "Tétrades (7ª)",
+      "quality": "Menor",
+      "intervals": [0, 3, 7, 11],
+      "required": [0, 3, 11],
+      "formula": "1 - b3 - 5 - 7",
+      "description": "Sonoridade dramática e misteriosa da escala menor melódica/harmônica."
+    },
+    {
+      "id": "m7b5",
+      "symbol": "m7b5",
+      "name": "Meio-Diminuto",
+      "category": "Tétrades (7ª)",
+      "quality": "Meio-Diminuto",
+      "intervals": [0, 3, 6, 10],
+      "required": [0, 3, 6, 10],
+      "formula": "1 - b3 - b5 - b7",
+      "description": "Acorde ii no ii-V-i menor e VII grau do campo harmônico maior."
+    },
+    {
+      "id": "dim7",
+      "symbol": "dim7",
+      "name": "Diminuto com 7ª",
+      "category": "Tétrades (7ª)",
+      "quality": "Diminuto",
+      "intervals": [0, 3, 6, 9],
+      "required": [0, 3, 6, 9],
+      "formula": "1 - b3 - b5 - bb7",
+      "description": "Tétrade totalmente simétrica que se repete a cada 3 casas."
+    },
+    {
+      "id": "7sus4",
+      "symbol": "7sus4",
+      "name": "Dominante 7 Sus4",
+      "category": "Suspensos",
+      "quality": "Dominante",
+      "intervals": [0, 5, 7, 10],
+      "required": [0, 5, 10],
+      "formula": "1 - 4 - 5 - b7",
+      "description": "Dominante suspenso muito presente em Soul, Pop e Fusion."
+    },
+    {
+      "id": "6",
+      "symbol": "6",
+      "name": "Maior com 6ª",
+      "category": "Sextas & Add",
+      "quality": "Maior",
+      "intervals": [0, 4, 7, 9],
+      "required": [0, 4, 9],
+      "formula": "1 - 3 - 5 - 6",
+      "description": "Tônica alternativa calorosa muito usada em Swing, Jazz e MPB."
+    },
+    {
+      "id": "m6",
+      "symbol": "m6",
+      "name": "Menor com 6ª",
+      "category": "Sextas & Add",
+      "quality": "Menor",
+      "intervals": [0, 3, 7, 9],
+      "required": [0, 3, 9],
+      "formula": "1 - b3 - 5 - 6",
+      "description": "Cor dórica clássica, essencial em Gypsy Jazz e Bossa Nova."
+    },
+    {
+      "id": "add9",
+      "symbol": "add9",
+      "name": "Maior Add9",
+      "category": "Sextas & Add",
+      "quality": "Maior",
+      "intervals": [0, 4, 7, 2],
+      "required": [0, 4, 2],
+      "formula": "1 - 3 - 5 - 9",
+      "description": "Tríade maior enriquecida com a 9ª sem a 7ª — brilho pop/rock."
+    },
+    {
+      "id": "madd9",
+      "symbol": "m(add9)",
+      "name": "Menor Add9",
+      "category": "Sextas & Add",
+      "quality": "Menor",
+      "intervals": [0, 3, 7, 2],
+      "required": [0, 3, 2],
+      "formula": "1 - b3 - 5 - 9",
+      "description": "Acorde menor expressivo e emocional com tensão de 9ª."
+    },
+    {
+      "id": "69",
+      "symbol": "6/9",
+      "name": "Maior 6/9",
+      "category": "Sextas & Add",
+      "quality": "Maior",
+      "intervals": [0, 4, 7, 9, 2],
+      "required": [0, 4, 9, 2],
+      "formula": "1 - 3 - 5 - 6 - 9",
+      "description": "Acorde de finalização clássico do Jazz e Bossa Nova."
+    },
+    {
+      "id": "9",
+      "symbol": "9",
+      "name": "Dominante 9",
+      "category": "Extensões",
+      "quality": "Dominante",
+      "intervals": [0, 4, 7, 10, 2],
+      "required": [0, 4, 10, 2],
+      "formula": "1 - 3 - 5 - b7 - 9",
+      "description": "O acorde clássico do Funk (James Brown) e Blues sofisticado."
+    },
+    {
+      "id": "maj9",
+      "symbol": "maj9",
+      "name": "Maior com 9ª",
+      "category": "Extensões",
+      "quality": "Maior",
+      "intervals": [0, 4, 7, 11, 2],
+      "required": [0, 4, 11, 2],
+      "formula": "1 - 3 - 5 - 7 - 9",
+      "description": "Sonoridade exuberante e moderna para Neo-Soul e Jazz."
+    },
+    {
+      "id": "m9",
+      "symbol": "m9",
+      "name": "Menor com 9ª",
+      "category": "Extensões",
+      "quality": "Menor",
+      "intervals": [0, 3, 7, 10, 2],
+      "required": [0, 3, 10, 2],
+      "formula": "1 - b3 - 5 - b7 - 9",
+      "description": "Acorde menor sofisticado muito comum em R&B, Neo-Soul e Jazz."
+    },
+    {
+      "id": "11",
+      "symbol": "11",
+      "name": "Dominante 11",
+      "category": "Extensões",
+      "quality": "Dominante",
+      "intervals": [0, 7, 10, 2, 5],
+      "required": [0, 10, 5],
+      "formula": "1 - (3) - 5 - b7 - 9 - 11",
+      "description": "Dominante com atmosfera aberta e suspensa (normalmente omite a 3ª)."
+    },
+    {
+      "id": "m11",
+      "symbol": "m11",
+      "name": "Menor com 11ª",
+      "category": "Extensões",
+      "quality": "Menor",
+      "intervals": [0, 3, 7, 10, 5],
+      "required": [0, 3, 10, 5],
+      "formula": "1 - b3 - 5 - b7 - 11",
+      "description": "Acorde menor aberto e quartal, assinatura do Jazz modal e Neo-Soul."
+    },
+    {
+      "id": "13",
+      "symbol": "13",
+      "name": "Dominante 13",
+      "category": "Extensões",
+      "quality": "Dominante",
+      "intervals": [0, 4, 10, 9],
+      "required": [0, 4, 10, 9],
+      "formula": "1 - 3 - (5) - b7 - (9) - 13",
+      "description": "Dominante rico e elegante muito usado em Jazz, Blues e Samba."
+    },
+    {
+      "id": "7#5",
+      "symbol": "7#5",
+      "name": "Dominante 7 #5 (Aug7)",
+      "category": "Alterados",
+      "quality": "Alterado",
+      "intervals": [0, 4, 8, 10],
+      "required": [0, 4, 8, 10],
+      "formula": "1 - 3 - #5 - b7",
+      "description": "Dominante aumentado que puxa fortemente para o acorde I ou IV."
+    },
+    {
+      "id": "7b5",
+      "symbol": "7b5",
+      "name": "Dominante 7 b5",
+      "category": "Alterados",
+      "quality": "Alterado",
+      "intervals": [0, 4, 6, 10],
+      "required": [0, 4, 6, 10],
+      "formula": "1 - 3 - b5 - b7",
+      "description": "Dominante com 5ª diminuta — ligação direta com escala de Tons Inteiros e Lídia b7."
+    },
+    {
+      "id": "7b9",
+      "symbol": "7b9",
+      "name": "Dominante 7 b9",
+      "category": "Alterados",
+      "quality": "Alterado",
+      "intervals": [0, 4, 10, 1],
+      "required": [0, 4, 10, 1],
+      "formula": "1 - 3 - (5) - b7 - b9",
+      "description": "Tensão clássica para resolver em acordes menores (escala diminuta/alterada)."
+    },
+    {
+      "id": "7#9",
+      "symbol": "7#9",
+      "name": "Dominante 7 #9 (Hendrix)",
+      "category": "Alterados",
+      "quality": "Alterado",
+      "intervals": [0, 4, 10, 3],
+      "required": [0, 4, 10, 3],
+      "formula": "1 - 3 - (5) - b7 - #9",
+      "description": "O famoso 'Hendrix Chord' — agressivo, bluesy e cheio de atitude."
+    },
+    {
+      "id": "maj7#11",
+      "symbol": "maj7#11",
+      "name": "Maior 7 #11 (Lídio)",
+      "category": "Alterados",
+      "quality": "Maior",
+      "intervals": [0, 4, 11, 6],
+      "required": [0, 4, 11, 6],
+      "formula": "1 - 3 - (5) - 7 - #11",
+      "description": "Acorde lídio etéreo e sonhador, muito usado em Fusion e trilhas."
+    }
+  ],
+  "cagedTemplates": {
+    "maj": [
+      { "caged": "C", "rootString": 1, "offsets": [-1, 3, 2, 0, 1, 0], "baseRootFret": 3, "label": "CAGED C Shape" },
+      { "caged": "A", "rootString": 1, "offsets": [-1, 0, 2, 2, 2, 0], "baseRootFret": 0, "label": "CAGED A Shape" },
+      { "caged": "G", "rootString": 0, "offsets": [3, 2, 0, 0, 0, 3], "baseRootFret": 3, "label": "CAGED G Shape" },
+      { "caged": "E", "rootString": 0, "offsets": [0, 2, 2, 1, 0, 0], "baseRootFret": 0, "label": "CAGED E Shape" },
+      { "caged": "D", "rootString": 2, "offsets": [-1, -1, 0, 2, 3, 2], "baseRootFret": 0, "label": "CAGED D Shape" }
+    ],
+    "min": [
+      { "caged": "C", "rootString": 1, "offsets": [-1, 3, 1, 0, 1, -1], "baseRootFret": 3, "label": "CAGED Cm Shape" },
+      { "caged": "A", "rootString": 1, "offsets": [-1, 0, 2, 2, 1, 0], "baseRootFret": 0, "label": "CAGED Am Shape" },
+      { "caged": "G", "rootString": 0, "offsets": [3, 1, 0, 0, 3, 3], "baseRootFret": 3, "label": "CAGED Gm Shape" },
+      { "caged": "E", "rootString": 0, "offsets": [0, 2, 2, 0, 0, 0], "baseRootFret": 0, "label": "CAGED Em Shape" },
+      { "caged": "D", "rootString": 2, "offsets": [-1, -1, 0, 2, 3, 1], "baseRootFret": 0, "label": "CAGED Dm Shape" }
+    ],
+    "7": [
+      { "caged": "C", "rootString": 1, "offsets": [-1, 3, 2, 3, 1, -1], "baseRootFret": 3, "label": "CAGED C7 Shape" },
+      { "caged": "A", "rootString": 1, "offsets": [-1, 0, 2, 0, 2, 0], "baseRootFret": 0, "label": "CAGED A7 Shape" },
+      { "caged": "G", "rootString": 0, "offsets": [3, 2, 0, 0, 0, 1], "baseRootFret": 3, "label": "CAGED G7 Shape" },
+      { "caged": "E", "rootString": 0, "offsets": [0, 2, 0, 1, 0, 0], "baseRootFret": 0, "label": "CAGED E7 Shape" },
+      { "caged": "D", "rootString": 2, "offsets": [-1, -1, 0, 2, 1, 2], "baseRootFret": 0, "label": "CAGED D7 Shape" }
+    ],
+    "maj7": [
+      { "caged": "C", "rootString": 1, "offsets": [-1, 3, 2, 0, 0, 0], "baseRootFret": 3, "label": "CAGED Cmaj7 Shape" },
+      { "caged": "A", "rootString": 1, "offsets": [-1, 0, 2, 1, 2, 0], "baseRootFret": 0, "label": "CAGED Amaj7 Shape" },
+      { "caged": "G", "rootString": 0, "offsets": [3, 2, 0, 0, 0, 2], "baseRootFret": 3, "label": "CAGED Gmaj7 Shape" },
+      { "caged": "E", "rootString": 0, "offsets": [0, 2, 1, 1, 0, 0], "baseRootFret": 0, "label": "CAGED Emaj7 Shape" },
+      { "caged": "D", "rootString": 2, "offsets": [-1, -1, 0, 2, 2, 2], "baseRootFret": 0, "label": "CAGED Dmaj7 Shape" }
+    ],
+    "m7": [
+      { "caged": "A", "rootString": 1, "offsets": [-1, 0, 2, 0, 1, 0], "baseRootFret": 0, "label": "CAGED Am7 Shape" },
+      { "caged": "E", "rootString": 0, "offsets": [0, 2, 0, 0, 0, 0], "baseRootFret": 0, "label": "CAGED Em7 Shape" },
+      { "caged": "D", "rootString": 2, "offsets": [-1, -1, 0, 2, 1, 1], "baseRootFret": 0, "label": "CAGED Dm7 Shape" }
+    ]
+  }
+}

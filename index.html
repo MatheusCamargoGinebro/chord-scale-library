@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chord & Scale Library — Biblioteca avançada de acordes, escalas, modos, arpejos, progressões, composição e estudo para violão e guitarra.">
+  <meta name="theme-color" content="#090d16">
+  <title>Chord &amp; Scale Library — Estúdio de Violão &amp; Guitarra</title>
+
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Optional modern fonts with fast system fallbacks for offline use -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./css/variables.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/modules.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside id="app-sidebar" class="sidebar" aria-label="Navegação principal">
+      <div class="brand-header">
+        <img src="./icons/icon.svg" alt="" class="brand-logo" width="36" height="36">
+        <div>
+          <h1 class="brand-name">Chord &amp; Scale</h1>
+          <span class="brand-sub">LIBRARY PRO</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-group-label">Estudo &amp; Visualização</span>
+        <button class="nav-item active" data-nav="chords">
+          <span class="nav-ico">🎸</span>
+          <span>Biblioteca de Acordes</span>
+        </button>
+        <button class="nav-item" data-nav="fretboard">
+          <span class="nav-ico">📐</span>
+          <span>Visualizador do Braço</span>
+        </button>
+        <button class="nav-item" data-nav="scales">
+          <span class="nav-ico">🎼</span>
+          <span>Construtor de Escalas</span>
+        </button>
+        <button class="nav-item" data-nav="modes">
+          <span class="nav-ico">🌈</span>
+          <span>Explorador de Modos</span>
+        </button>
+        <button class="nav-item" data-nav="arpeggios">
+          <span class="nav-ico">⚡</span>
+          <span>Arpejos &amp; Ligações</span>
+        </button>
+
+        <span class="nav-group-label">Harmonia &amp; Prática</span>
+        <button class="nav-item" data-nav="comparator">
+          <span class="nav-ico">⚖️</span>
+          <span>Comparador</span>
+        </button>
+        <button class="nav-item" data-nav="progressions">
+          <span class="nav-ico">🎹</span>
+          <span>Progressões &amp; IA</span>
+        </button>
+        <button class="nav-item" data-nav="trainer">
+          <span class="nav-ico">🎯</span>
+          <span>Treinador Quiz</span>
+        </button>
+
+        <span class="nav-group-label">Estúdio Pessoal</span>
+        <button class="nav-item" data-nav="composer">
+          <span class="nav-ico">✍️</span>
+          <span>Compositor</span>
+        </button>
+        <button class="nav-item" data-nav="favorites">
+          <span class="nav-ico">★</span>
+          <span>Favoritos</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-tip">
+          <strong>Dica Pro:</strong> Clique em qualquer casa do braço para ouvir a nota em tempo real e alimentar o Heatmap.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-area">
+      <!-- Top Control Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="btn-mobile-menu" class="btn btn-ghost btn-sm mobile-only" aria-label="Abrir menu">☰</button>
+          <div class="topbar-control">
+            <label for="global-tuning" class="topbar-label">Afinação</label>
+            <select id="global-tuning" class="select-control select-sm" aria-label="Selecionar afinação"></select>
+          </div>
+          <div class="topbar-control">
+            <label for="global-tone" class="topbar-label">Timbre</label>
+            <select id="global-tone" class="select-control select-sm" aria-label="Selecionar timbre da guitarra">
+              <option value="acoustic">Violão Aço</option>
+              <option value="clean">Guitarra Clean</option>
+              <option value="jazz">Jazz Hollow</option>
+              <option value="overdrive">Rock Crunch</option>
+            </select>
+          </div>
+          <span id="offline-badge" class="badge badge-gold" hidden>Modo Offline</span>
+        </div>
+
+        <div class="topbar-right">
+          <button id="btn-studio-toggle" class="btn btn-secondary btn-sm">🥁 Metrônomo &amp; Bateria</button>
+          <button id="btn-mute" class="btn btn-ghost btn-sm">🔊 Som</button>
+          <button id="btn-share-link" class="btn btn-ghost btn-sm">🔗 Compartilhar</button>
+          <button id="btn-theme-toggle" class="btn btn-ghost btn-sm">☀ Light</button>
+          <button id="btn-pwa-install" class="btn btn-primary btn-sm" hidden>⬇ Instalar App</button>
+        </div>
+      </header>
+
+      <!-- Active Module Stage -->
+      <main id="module-stage" class="module-stage" aria-live="polite">
+        <div class="card empty-state">
+          <h3>Carregando biblioteca musical...</h3>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Collapsible Studio Rhythm Dock (Metronome + 16-Step Drum Machine) -->
+  <aside id="studio-dock" class="studio-dock" aria-label="Metrônomo e Bateria Eletrônica">
+    <div class="studio-dock-inner">
+      <div class="studio-head">
+        <div class="studio-head-left">
+          <strong>🥁 Estúdio de Ritmo — Metrônomo &amp; Drum Machine</strong>
+          <div id="beat-leds" class="beat-leds" aria-hidden="true">
+            <span class="beat-led accent"></span>
+            <span class="beat-led"></span>
+            <span class="beat-led"></span>
+            <span class="beat-led"></span>
+          </div>
+        </div>
+        <div class="studio-controls">
+          <button id="studio-metro-btn" class="btn btn-ghost btn-sm">⏱ Metrônomo</button>
+          <button id="studio-drum-btn" class="btn btn-ghost btn-sm">🥁 Bateria</button>
+          <button id="studio-stop-btn" class="btn btn-ghost btn-sm">■ Parar</button>
+          <div class="bpm-box">
+            <input type="range" id="studio-bpm-range" min="40" max="220" value="104" aria-label="BPM">
+            <span id="studio-bpm-val" class="mono-text">104 BPM</span>
+          </div>
+          <button id="studio-tap-btn" class="btn btn-secondary btn-xs">Tap Tempo</button>
+          <select id="studio-drum-preset" class="select-control select-xs" aria-label="Ritmo da bateria"></select>
+          <button id="btn-close-studio" class="btn btn-ghost btn-xs" aria-label="Fechar painel">✕</button>
+        </div>
+      </div>
+      <div id="drum-sequencer-grid" class="drum-sequencer-grid"></div>
+    </div>
+  </aside>
+
+  <!-- Toast Notification Host -->
+  <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

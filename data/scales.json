@@ -1,0 +1,334 @@
+{
+  "scales": [
+    {
+      "id": "major",
+      "name": "Maior (Jônia)",
+      "category": "Diatônicas",
+      "intervals": [0, 2, 4, 5, 7, 9, 11],
+      "formula": "1 - 2 - 3 - 4 - 5 - 6 - 7",
+      "steps": "T - T - S - T - T - T - S",
+      "characteristic": "7 (Sensível)",
+      "mood": "Alegre, brilhante, resolutiva",
+      "chords": ["Maj7", "m7", "m7", "Maj7", "7", "m7", "m7b5"],
+      "parent": "major",
+      "modeIndex": 0
+    },
+    {
+      "id": "natural_minor",
+      "name": "Menor Natural (Eólia)",
+      "category": "Diatônicas",
+      "intervals": [0, 2, 3, 5, 7, 8, 10],
+      "formula": "1 - 2 - b3 - 4 - 5 - b6 - b7",
+      "steps": "T - S - T - T - S - T - T",
+      "characteristic": "b6 (Sexta menor)",
+      "mood": "Melancólica, épica, introspectiva",
+      "chords": ["m7", "m7b5", "Maj7", "m7", "m7", "Maj7", "7"],
+      "parent": "major",
+      "modeIndex": 5
+    },
+    {
+      "id": "harmonic_minor",
+      "name": "Menor Harmônica",
+      "category": "Menores",
+      "intervals": [0, 2, 3, 5, 7, 8, 11],
+      "formula": "1 - 2 - b3 - 4 - 5 - b6 - 7",
+      "steps": "T - S - T - T - S - 1½ - S",
+      "characteristic": "b6 e 7 (Salto de 2ª aumentada)",
+      "mood": "Neoclássica, exótica, tensa",
+      "chords": ["m(maj7)", "m7b5", "Maj7#5", "m7", "7", "Maj7", "dim7"],
+      "parent": "harmonic_minor",
+      "modeIndex": 0
+    },
+    {
+      "id": "melodic_minor",
+      "name": "Menor Melódica (Jazz)",
+      "category": "Menores",
+      "intervals": [0, 2, 3, 5, 7, 9, 11],
+      "formula": "1 - 2 - b3 - 4 - 5 - 6 - 7",
+      "steps": "T - S - T - T - T - T - S",
+      "characteristic": "b3 com 6 e 7 maiores",
+      "mood": "Sofisticada, moderna, jazzística",
+      "chords": ["m(maj7)", "m7", "Maj7#5", "7#11", "7", "m7b5", "7alt"],
+      "parent": "melodic_minor",
+      "modeIndex": 0
+    },
+    {
+      "id": "pentatonic_major",
+      "name": "Pentatônica Maior",
+      "category": "Pentatônicas & Blues",
+      "intervals": [0, 2, 4, 7, 9],
+      "formula": "1 - 2 - 3 - 5 - 6",
+      "steps": "T - T - 1½ - T - 1½",
+      "characteristic": "Sem semitons (consistente)",
+      "mood": "Aberta, country, pop, rock clássico",
+      "chords": ["Maj", "add9", "6", "Maj7"]
+    },
+    {
+      "id": "pentatonic_minor",
+      "name": "Pentatônica Menor",
+      "category": "Pentatônicas & Blues",
+      "intervals": [0, 3, 5, 7, 10],
+      "formula": "1 - b3 - 4 - 5 - b7",
+      "steps": "1½ - T - T - 1½ - T",
+      "characteristic": "b3 e b7 diretos",
+      "mood": "Rock, Blues, expressiva e direta",
+      "chords": ["m", "m7", "7", "5"]
+    },
+    {
+      "id": "blues",
+      "name": "Escala Blues (Menor)",
+      "category": "Pentatônicas & Blues",
+      "intervals": [0, 3, 5, 6, 7, 10],
+      "formula": "1 - b3 - 4 - b5 - 5 - b7",
+      "steps": "1½ - T - S - S - 1½ - T",
+      "characteristic": "b5 (Blue Note)",
+      "mood": "Blues, Rock, Funk, cheia de suingue",
+      "chords": ["7", "m7", "9"]
+    },
+    {
+      "id": "blues_major",
+      "name": "Escala Blues Maior",
+      "category": "Pentatônicas & Blues",
+      "intervals": [0, 2, 3, 4, 7, 9],
+      "formula": "1 - 2 - b3 - 3 - 5 - 6",
+      "steps": "T - S - S - 1½ - T - 1½",
+      "characteristic": "b3 resolvendo na 3",
+      "mood": "Blues alegre, Southern Rock, Country",
+      "chords": ["Maj", "7", "6", "9"]
+    },
+    {
+      "id": "dorian",
+      "name": "Dórica",
+      "category": "Modos Gregos",
+      "intervals": [0, 2, 3, 5, 7, 9, 10],
+      "formula": "1 - 2 - b3 - 4 - 5 - 6 - b7",
+      "steps": "T - S - T - T - T - S - T",
+      "characteristic": "6 (Sexta maior em modo menor)",
+      "mood": "Groove, Santana, Funk, Jazz modal",
+      "chords": ["m7", "m6", "m9", "m11"],
+      "parent": "major",
+      "modeIndex": 1
+    },
+    {
+      "id": "phrygian",
+      "name": "Frígia",
+      "category": "Modos Gregos",
+      "intervals": [0, 1, 3, 5, 7, 8, 10],
+      "formula": "1 - b2 - b3 - 4 - 5 - b6 - b7",
+      "steps": "S - T - T - T - S - T - T",
+      "characteristic": "b2 (Segunda menor)",
+      "mood": "Flamenco, Metal, sombria e espanhola",
+      "chords": ["m7", "m(b9)", "5"],
+      "parent": "major",
+      "modeIndex": 2
+    },
+    {
+      "id": "lydian",
+      "name": "Lídia",
+      "category": "Modos Gregos",
+      "intervals": [0, 2, 4, 6, 7, 9, 11],
+      "formula": "1 - 2 - 3 - #4 - 5 - 6 - 7",
+      "steps": "T - T - T - S - T - T - S",
+      "characteristic": "#4 (Quarta aumentada)",
+      "mood": "Etérea, espacial, cinematográfica (Vai/Satriani)",
+      "chords": ["Maj7#11", "Maj7", "Maj9"],
+      "parent": "major",
+      "modeIndex": 3
+    },
+    {
+      "id": "mixolydian",
+      "name": "Mixolídia",
+      "category": "Modos Gregos",
+      "intervals": [0, 2, 4, 5, 7, 9, 10],
+      "formula": "1 - 2 - 3 - 4 - 5 - 6 - b7",
+      "steps": "T - T - S - T - T - S - T",
+      "characteristic": "b7 em modo maior",
+      "mood": "Classic Rock, Blues-Rock, Baião, Dominante",
+      "chords": ["7", "9", "13", "7sus4"],
+      "parent": "major",
+      "modeIndex": 4
+    },
+    {
+      "id": "aeolian",
+      "name": "Eólia",
+      "category": "Modos Gregos",
+      "intervals": [0, 2, 3, 5, 7, 8, 10],
+      "formula": "1 - 2 - b3 - 4 - 5 - b6 - b7",
+      "steps": "T - S - T - T - S - T - T",
+      "characteristic": "b6 (Sexta menor)",
+      "mood": "Menor natural clássica, Rock e Metal melódico",
+      "chords": ["m", "m7", "m(add9)"],
+      "parent": "major",
+      "modeIndex": 5
+    },
+    {
+      "id": "locrian",
+      "name": "Lócria",
+      "category": "Modos Gregos",
+      "intervals": [0, 1, 3, 5, 6, 8, 10],
+      "formula": "1 - b2 - b3 - 4 - b5 - b6 - b7",
+      "steps": "S - T - T - S - T - T - T",
+      "characteristic": "b2 e b5 (Instável)",
+      "mood": "Dissonante, tensa, ideal sobre acordes m7b5",
+      "chords": ["m7b5", "dim"],
+      "parent": "major",
+      "modeIndex": 6
+    },
+    {
+      "id": "bebop_dominant",
+      "name": "Bebop Dominante",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 2, 4, 5, 7, 9, 10, 11],
+      "formula": "1 - 2 - 3 - 4 - 5 - 6 - b7 - 7",
+      "steps": "T - T - S - T - T - S - S - S",
+      "characteristic": "Nota de passagem cromática entre b7 e 1",
+      "mood": "Jazz tradicional, swing fluido e fraseado contínuo",
+      "chords": ["7", "9", "13"]
+    },
+    {
+      "id": "bebop_major",
+      "name": "Bebop Maior",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 2, 4, 5, 7, 8, 9, 11],
+      "formula": "1 - 2 - 3 - 4 - 5 - #5 - 6 - 7",
+      "steps": "T - T - S - T - S - S - T - S",
+      "characteristic": "#5 / b6 cromático entre 5 e 6",
+      "mood": "Bebop brilhante com notas do acorde caindo nos tempos fortes",
+      "chords": ["Maj7", "6", "6/9"]
+    },
+    {
+      "id": "chromatic",
+      "name": "Cromática",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+      "formula": "Todos os 12 semitons",
+      "steps": "S - S - S - S - S - S - S - S - S - S - S - S",
+      "characteristic": "Todas as 12 notas",
+      "mood": "Passagens cromáticas, técnica, aproximações no Jazz",
+      "chords": ["Todos"]
+    },
+    {
+      "id": "whole_tone",
+      "name": "Whole Tone (Tons Inteiros)",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 2, 4, 6, 8, 10],
+      "formula": "1 - 2 - 3 - #4 - #5 - b7",
+      "steps": "T - T - T - T - T - T",
+      "characteristic": "Simetria pura de tons inteiros",
+      "mood": "Onírica, impressionista (Debussy), dominantes alterados",
+      "chords": ["aug", "7#5", "7b5"]
+    },
+    {
+      "id": "diminished_hw",
+      "name": "Diminuta (Semitom-Tom)",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 1, 3, 4, 6, 7, 9, 10],
+      "formula": "1 - b2 - #2 - 3 - #4 - 5 - 6 - b7",
+      "steps": "S - T - S - T - S - T - S - T",
+      "characteristic": "b9, #9, #11 e 13 juntos",
+      "mood": "Jazz moderno, Fusion, tensão dominante simétrica",
+      "chords": ["7b9", "7#9", "13", "dim7"]
+    },
+    {
+      "id": "diminished_wh",
+      "name": "Diminuta (Tom-Semitom)",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 2, 3, 5, 6, 8, 9, 11],
+      "formula": "1 - 2 - b3 - 4 - b5 - b6 - 6 - 7",
+      "steps": "T - S - T - S - T - S - T - S",
+      "characteristic": "Simétrica sobre acordes dim7",
+      "mood": "Misteriosa, tensão simétrica de 8 notas",
+      "chords": ["dim7", "dim"]
+    },
+    {
+      "id": "altered",
+      "name": "Alterada (Super Lócria)",
+      "category": "Jazz & Simétricas",
+      "intervals": [0, 1, 3, 4, 6, 8, 10],
+      "formula": "1 - b9 - #9 - 3 - b5 - #5 - b7",
+      "steps": "S - T - S - T - T - T - T",
+      "characteristic": "Todas as tensões alteradas (b9, #9, b5, #5)",
+      "mood": "Máxima tensão dominante no Jazz/Fusion (7º modo da Menor Melódica)",
+      "chords": ["7#5", "7b5", "7b9", "7#9"],
+      "parent": "melodic_minor",
+      "modeIndex": 6
+    },
+    {
+      "id": "phrygian_dominant",
+      "name": "Frígia Dominante",
+      "category": "Exóticas",
+      "intervals": [0, 1, 4, 5, 7, 8, 10],
+      "formula": "1 - b2 - 3 - 4 - 5 - b6 - b7",
+      "steps": "S - 1½ - S - T - S - T - T",
+      "characteristic": "b2 e 3 maior (5º modo da Menor Harmônica)",
+      "mood": "Oriente Médio, Flamenco, Metal Neoclássico",
+      "chords": ["7b9", "7", "Maj"],
+      "parent": "harmonic_minor",
+      "modeIndex": 4
+    },
+    {
+      "id": "lydian_dominant",
+      "name": "Lídia Dominante (Lídia b7)",
+      "category": "Exóticas",
+      "intervals": [0, 2, 4, 6, 7, 9, 10],
+      "formula": "1 - 2 - 3 - #4 - 5 - 6 - b7",
+      "steps": "T - T - T - S - T - S - T",
+      "characteristic": "#4 com b7 (4º modo da Menor Melódica)",
+      "mood": "Fusion, Jazz, substituto trítono (SubV7)",
+      "chords": ["7b5", "7", "9", "13"],
+      "parent": "melodic_minor",
+      "modeIndex": 3
+    }
+  ],
+  "parentSystems": {
+    "major": {
+      "name": "Escala Maior (Diatônica)",
+      "intervals": [0, 2, 4, 5, 7, 9, 11],
+      "modes": [
+        { "degree": "I", "name": "Jônio", "chord": "Maj7", "character": "Natural / Maior brilhante", "brightness": 5 },
+        { "degree": "II", "name": "Dórico", "chord": "m7", "character": "Menor com 6ª maior (Groove)", "brightness": 3 },
+        { "degree": "III", "name": "Frígio", "chord": "m7", "character": "Menor sombrio com b2", "brightness": 1 },
+        { "degree": "IV", "name": "Lídio", "chord": "Maj7#11", "character": "Maior sonhador com #4", "brightness": 6 },
+        { "degree": "V", "name": "Mixolídio", "chord": "7", "character": "Dominante com b7", "brightness": 4 },
+        { "degree": "VI", "name": "Eólio", "chord": "m7", "character": "Menor Natural (b6)", "brightness": 2 },
+        { "degree": "VII", "name": "Lócrio", "chord": "m7b5", "character": "Meio-diminuto instável (b2, b5)", "brightness": 0 }
+      ]
+    },
+    "melodic_minor": {
+      "name": "Escala Menor Melódica",
+      "intervals": [0, 2, 3, 5, 7, 9, 11],
+      "modes": [
+        { "degree": "I", "name": "Menor Melódica", "chord": "m(maj7)", "character": "Menor com 6 e 7 maiores", "brightness": 4 },
+        { "degree": "II", "name": "Dórico b2", "chord": "m7(b9)", "character": "Dórico com b2 (susb9)", "brightness": 2 },
+        { "degree": "III", "name": "Lídio Aumentado", "chord": "Maj7#5", "character": "Lídio com #5 etéreo", "brightness": 6 },
+        { "degree": "IV", "name": "Lídio Dominante", "chord": "7#11", "character": "SubV7, Fusion e Jazz", "brightness": 5 },
+        { "degree": "V", "name": "Mixolídio b6", "chord": "7(b13)", "character": "Hindu / Dominante melancólico", "brightness": 3 },
+        { "degree": "VI", "name": "Lócrio #2", "chord": "m7b5", "character": "Meio-diminuto sofisticado", "brightness": 1 },
+        { "degree": "VII", "name": "Super Lócrio (Alterada)", "chord": "7alt", "character": "Máxima tensão dominante", "brightness": 0 }
+      ]
+    },
+    "harmonic_minor": {
+      "name": "Escala Menor Harmônica",
+      "intervals": [0, 2, 3, 5, 7, 8, 11],
+      "modes": [
+        { "degree": "I", "name": "Menor Harmônica", "chord": "m(maj7)", "character": "Neoclássica (b6 e 7)", "brightness": 3 },
+        { "degree": "II", "name": "Lócrio ♮6", "chord": "m7b5", "character": "Meio-diminuto com 6ª maior", "brightness": 1 },
+        { "degree": "III", "name": "Jônio #5", "chord": "Maj7#5", "character": "Maior aumentado", "brightness": 5 },
+        { "degree": "IV", "name": "Dórico #4", "chord": "m7(#11)", "character": "Menor cigano / Ucraniano", "brightness": 4 },
+        { "degree": "V", "name": "Frígio Dominante", "chord": "7b9", "character": "Flamenco / Oriente Médio", "brightness": 2 },
+        { "degree": "VI", "name": "Lídio #2", "chord": "Maj7#9", "character": "Lídio exótico com #2", "brightness": 6 },
+        { "degree": "VII", "name": "Ultra Lócrio", "chord": "dim7", "character": "Diminuto alterado (bb7)", "brightness": 0 }
+      ]
+    }
+  },
+  "arpeggios": [
+    { "id": "maj7", "name": "Maior 7 (Maj7)", "symbol": "maj7", "intervals": [0, 4, 7, 11], "formula": "1 - 3 - 5 - 7", "color": "#22c55e" },
+    { "id": "m7", "name": "Menor 7 (m7)", "symbol": "m7", "intervals": [0, 3, 7, 10], "formula": "1 - b3 - 5 - b7", "color": "#38bdf8" },
+    { "id": "7", "name": "Dominante (7)", "symbol": "7", "intervals": [0, 4, 7, 10], "formula": "1 - 3 - 5 - b7", "color": "#f59e0b" },
+    { "id": "dim7", "name": "Diminuto (dim7)", "symbol": "dim7", "intervals": [0, 3, 6, 9], "formula": "1 - b3 - b5 - bb7", "color": "#ec4899" },
+    { "id": "aug", "name": "Aumentado (aug)", "symbol": "aug", "intervals": [0, 4, 8], "formula": "1 - 3 - #5", "color": "#a855f7" },
+    { "id": "m7b5", "name": "Meio-Diminuto (m7b5)", "symbol": "m7b5", "intervals": [0, 3, 6, 10], "formula": "1 - b3 - b5 - b7", "color": "#ef4444" },
+    { "id": "maj", "name": "Tríade Maior", "symbol": "", "intervals": [0, 4, 7], "formula": "1 - 3 - 5", "color": "#10b981" },
+    { "id": "min", "name": "Tríade Menor", "symbol": "m", "intervals": [0, 3, 7], "formula": "1 - b3 - 5", "color": "#06b6d4" }
+  ]
+}

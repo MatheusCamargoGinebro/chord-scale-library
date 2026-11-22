@@ -1,0 +1,107 @@
+{
+  "notesSharp": ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+  "notesFlat": ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"],
+  "preferFlatsRoots": [1, 3, 5, 8, 10],
+  "intervals": [
+    { "semitones": 0, "short": "R", "degree": "1", "name": "Tônica (Uníssono)", "color": "#f59e0b" },
+    { "semitones": 1, "short": "b2", "degree": "b2", "name": "Segunda Menor", "color": "#ef4444" },
+    { "semitones": 2, "short": "2", "degree": "2", "name": "Segunda Maior / 9ª", "color": "#f97316" },
+    { "semitones": 3, "short": "b3", "degree": "b3", "name": "Terça Menor", "color": "#38bdf8" },
+    { "semitones": 4, "short": "3", "degree": "3", "name": "Terça Maior", "color": "#22c55e" },
+    { "semitones": 5, "short": "4", "degree": "4", "name": "Quarta Justa / 11ª", "color": "#14b8a6" },
+    { "semitones": 6, "short": "b5", "degree": "#4/b5", "name": "Trítono (b5 / #4)", "color": "#ec4899" },
+    { "semitones": 7, "short": "5", "degree": "5", "name": "Quinta Justa", "color": "#3b82f6" },
+    { "semitones": 8, "short": "b6", "degree": "b6/#5", "name": "Sexta Menor / #5", "color": "#a855f7" },
+    { "semitones": 9, "short": "6", "degree": "6", "name": "Sexta Maior / 13ª", "color": "#8b5cf6" },
+    { "semitones": 10, "short": "b7", "degree": "b7", "name": "Sétima Menor", "color": "#eab308" },
+    { "semitones": 11, "short": "7", "degree": "7", "name": "Sétima Maior", "color": "#10b981" }
+  ],
+  "tunings": [
+    {
+      "id": "standard",
+      "name": "Standard (E)",
+      "short": "EADGBE",
+      "strings": 6,
+      "notes": ["E", "A", "D", "G", "B", "E"],
+      "midi": [40, 45, 50, 55, 59, 64],
+      "description": "Afinação padrão universal de 6 cordas"
+    },
+    {
+      "id": "drop-d",
+      "name": "Drop D",
+      "short": "DADGBE",
+      "strings": 6,
+      "notes": ["D", "A", "D", "G", "B", "E"],
+      "midi": [38, 45, 50, 55, 59, 64],
+      "description": "6ª corda um tom abaixo — ideal para Rock e Metal"
+    },
+    {
+      "id": "drop-c",
+      "name": "Drop C",
+      "short": "CGCFAD",
+      "strings": 6,
+      "notes": ["C", "G", "C", "F", "A", "D"],
+      "midi": [36, 43, 48, 53, 57, 62],
+      "description": "Afinação grave pesada para Metal moderno e Hard Rock"
+    },
+    {
+      "id": "dadgad",
+      "name": "DADGAD",
+      "short": "DADGAD",
+      "strings": 6,
+      "notes": ["D", "A", "D", "G", "A", "D"],
+      "midi": [38, 45, 50, 55, 57, 62],
+      "description": "Afinação modal Dsus4 — muito usada em Fingerstyle e Folk"
+    },
+    {
+      "id": "open-g",
+      "name": "Open G",
+      "short": "DGDGBD",
+      "strings": 6,
+      "notes": ["D", "G", "D", "G", "B", "D"],
+      "midi": [38, 43, 50, 55, 59, 62],
+      "description": "Acorde de Sol Maior aberto — clássico do Blues e Slide"
+    },
+    {
+      "id": "open-d",
+      "name": "Open D",
+      "short": "DADF#AD",
+      "strings": 6,
+      "notes": ["D", "A", "D", "F#", "A", "D"],
+      "midi": [38, 45, 50, 54, 57, 62],
+      "description": "Acorde de Ré Maior aberto — rico para acústico e Slide"
+    },
+    {
+      "id": "7-string",
+      "name": "7 Cordas Standard",
+      "short": "BEADGBE",
+      "strings": 7,
+      "notes": ["B", "E", "A", "D", "G", "B", "E"],
+      "midi": [35, 40, 45, 50, 55, 59, 64],
+      "description": "Padrão 7 cordas com Si grave — Jazz, MPB e Metal"
+    }
+  ],
+  "circleOfFifths": [
+    { "major": "C", "majorPc": 0, "minor": "Am", "minorPc": 9, "accidentals": "0", "sharpsFlats": "Natural" },
+    { "major": "G", "majorPc": 7, "minor": "Em", "minorPc": 4, "accidentals": "1#", "sharpsFlats": "F#" },
+    { "major": "D", "majorPc": 2, "minor": "Bm", "minorPc": 11, "accidentals": "2#", "sharpsFlats": "F#, C#" },
+    { "major": "A", "majorPc": 9, "minor": "F#m", "minorPc": 6, "accidentals": "3#", "sharpsFlats": "F#, C#, G#" },
+    { "major": "E", "majorPc": 4, "minor": "C#m", "minorPc": 1, "accidentals": "4#", "sharpsFlats": "F#, C#, G#, D#" },
+    { "major": "B", "majorPc": 11, "minor": "G#m", "minorPc": 8, "accidentals": "5#", "sharpsFlats": "F#, C#, G#, D#, A#" },
+    { "major": "F#", "majorPc": 6, "minor": "D#m", "minorPc": 3, "accidentals": "6#/6b", "sharpsFlats": "F#, C#, G#, D#, A#, E#" },
+    { "major": "Db", "majorPc": 1, "minor": "Bbm", "minorPc": 10, "accidentals": "5b", "sharpsFlats": "Bb, Eb, Ab, Db, Gb" },
+    { "major": "Ab", "majorPc": 8, "minor": "Fm", "minorPc": 5, "accidentals": "4b", "sharpsFlats": "Bb, Eb, Ab, Db" },
+    { "major": "Eb", "majorPc": 3, "minor": "Cm", "minorPc": 0, "accidentals": "3b", "sharpsFlats": "Bb, Eb, Ab" },
+    { "major": "Bb", "majorPc": 10, "minor": "Gm", "minorPc": 7, "accidentals": "2b", "sharpsFlats": "Bb, Eb" },
+    { "major": "F", "majorPc": 5, "minor": "Dm", "minorPc": 2, "accidentals": "1b", "sharpsFlats": "Bb" }
+  ],
+  "cagedColors": {
+    "C": "#ef4444",
+    "A": "#f59e0b",
+    "G": "#22c55e",
+    "E": "#3b82f6",
+    "D": "#a855f7"
+  },
+  "fretMarkers": [3, 5, 7, 9, 12, 15, 17, 19, 21, 24],
+  "doubleFretMarkers": [12, 24]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Chord & Scale Library",
+  "short_name": "ChordScaleLib",
+  "description": "Biblioteca avançada de acordes, escalas, modos, arpejos, progressões e composição para violão e guitarra.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#f59e0b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

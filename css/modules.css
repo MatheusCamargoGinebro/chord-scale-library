@@ -1437,6 +1437,197 @@
   box-shadow: 0 0 0 2px var(--accent-blue);
 }
 
+/* --- Module 11: Dedicated Jam Mode --- */
+.jam-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.jam-empty-songs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-subcard);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.jam-now-next-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.jam-now-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.jam-now-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.jam-big-chord-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.jam-now-symbol {
+  font-size: 36px;
+  line-height: 1.05;
+  font-weight: 900;
+  color: var(--accent-gold);
+  letter-spacing: -0.02em;
+}
+
+.jam-mini-diag {
+  flex: 0 0 auto;
+  width: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jam-mini-diag svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.jam-beat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.jam-progress-track {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.jam-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-emerald));
+  border-radius: 999px;
+  transition: width 70ms linear;
+}
+
+.jam-next-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.jam-next-chord-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jam-next-symbol {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.jam-coach-box {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  line-height: 1.45;
+}
+
+.jam-timeline-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 6px;
+}
+
+.jam-ch-pill {
+  flex: 0 0 auto;
+  min-width: 78px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subcard);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+
+.jam-ch-pill:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.jam-ch-pill.active {
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-soft);
+  box-shadow: var(--shadow-glow);
+}
+
+.jam-ch-pill.active strong {
+  color: var(--accent-gold);
+}
+
+.jam-stage-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  margin-bottom: 16px;
+}
+
+.jam-stage-coach {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subcard);
+  border: 1px solid var(--border-subtle);
+}
+
+.jam-stage-next {
+  text-align: right;
+}
+
+.jam-stage-next .jam-next-chord-row {
+  justify-content: flex-end;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1120px) {
   .chord-views-grid,
@@ -1453,6 +1644,16 @@
   .comp-vs-badge {
     display: flex;
     justify-content: center;
+  }
+  .jam-now-next-grid,
+  .jam-stage-banner {
+    grid-template-columns: 1fr;
+  }
+  .jam-stage-next {
+    text-align: left;
+  }
+  .jam-stage-next .jam-next-chord-row {
+    justify-content: flex-start;
   }
 }
 

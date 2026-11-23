@@ -4,7 +4,7 @@
  * and falls back seamlessly to cached assets when offline.
  */
 
-const CACHE_NAME = 'chord-scale-library-v8';
+const CACHE_NAME = 'chord-scale-library-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -45,6 +45,7 @@ const ASSETS = [
   './js/modules/modTrainer.js',
   './js/modules/modFavorites.js',
   './js/modules/modComposer.js',
+  './js/modules/modJam.js',
 ];
 
 self.addEventListener('install', (event) => {

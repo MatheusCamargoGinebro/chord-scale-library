@@ -321,14 +321,21 @@ class RhythmEngineClass {
     osc.stop(time + 0.27);
   }
 
+  getNoiseBuffer(ctx) {
+    if (!this.sharedNoiseBuffer || this.sharedNoiseBuffer.sampleRate !== ctx.sampleRate) {
+      const len = Math.floor(ctx.sampleRate * 0.3);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+      this.sharedNoiseBuffer = buf;
+    }
+    return this.sharedNoiseBuffer;
+  }
+
   playSnare(time) {
     const ctx = AudioEngine.ctx;
-    const bufLen = Math.floor(ctx.sampleRate * 0.14);
-    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) ch[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = this.getNoiseBuffer(ctx);
     const filter = ctx.createBiquadFilter();
     filter.type = 'highpass';
     filter.frequency.value = 1100;
@@ -338,7 +345,9 @@ class RhythmEngineClass {
     src.connect(filter);
     filter.connect(gain);
     gain.connect(AudioEngine.masterGain);
+    src.onended = () => { try { filter.disconnect(); gain.disconnect(); } catch {} };
     src.start(time);
+    src.stop(time + 0.14);
 
     const osc = ctx.createOscillator();
     const og = ctx.createGain();
@@ -349,18 +358,15 @@ class RhythmEngineClass {
     og.gain.exponentialRampToValueAtTime(0.001, time + 0.09);
     osc.connect(og);
     og.connect(AudioEngine.masterGain);
+    osc.onended = () => { try { og.disconnect(); } catch {} };
     osc.start(time);
     osc.stop(time + 0.1);
   }
 
   playHiHat(time) {
     const ctx = AudioEngine.ctx;
-    const bufLen = Math.floor(ctx.sampleRate * 0.055);
-    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) ch[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = this.getNoiseBuffer(ctx);
     const filter = ctx.createBiquadFilter();
     filter.type = 'highpass';
     filter.frequency.value = 7200;
@@ -370,17 +376,15 @@ class RhythmEngineClass {
     src.connect(filter);
     filter.connect(gain);
     gain.connect(AudioEngine.masterGain);
+    src.onended = () => { try { filter.disconnect(); gain.disconnect(); } catch {} };
     src.start(time);
+    src.stop(time + 0.055);
   }
 
   playRide(time) {
     const ctx = AudioEngine.ctx;
-    const bufLen = Math.floor(ctx.sampleRate * 0.24);
-    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) ch[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = this.getNoiseBuffer(ctx);
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = 5400;
@@ -391,7 +395,9 @@ class RhythmEngineClass {
     src.connect(filter);
     filter.connect(gain);
     gain.connect(AudioEngine.masterGain);
+    src.onended = () => { try { filter.disconnect(); gain.disconnect(); } catch {} };
     src.start(time);
+    src.stop(time + 0.24);
   }
 }
 

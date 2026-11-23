@@ -59,6 +59,7 @@ export const GlobalSearch = {
       { kind: 'Módulo', title: 'Construtor de Escalas', subtitle: '23 escalas, 2/3/4 NPS e CAGED', ico: 'scales', go: () => this.appRef.navigate('scales') },
       { kind: 'Módulo', title: 'Visualizador do Braço 24 Casas', subtitle: 'Reverse Finder e Heatmap', ico: 'fretboard', go: () => this.appRef.navigate('fretboard') },
       { kind: 'Módulo', title: 'Progressões Harmônicas & IA', subtitle: 'Voice Leading e Circle of Fifths', ico: 'progressions', go: () => this.appRef.navigate('progressions') },
+      { kind: 'Módulo', title: 'Jam Mode (Improvisação ao Vivo)', subtitle: 'Backing track (base, baixo e bateria) + braço sincronizado', ico: 'radio', go: () => this.appRef.navigate('jam') },
       { kind: 'Módulo', title: 'Compositor de Músicas', subtitle: 'Verso, Refrão, Solo com shapes', ico: 'composer', go: () => this.appRef.navigate('composer') },
       { kind: 'Módulo', title: 'Explorador de Modos Gregos', subtitle: 'Jônio a Lócrio lado a lado', ico: 'modes', go: () => this.appRef.navigate('modes') },
       { kind: 'Módulo', title: 'Arpejos & Ligações', subtitle: 'Tétrades e conexões entre shapes', ico: 'arpeggios', go: () => this.appRef.navigate('arpeggios') },

@@ -24,6 +24,7 @@ import { ModProgressions } from './modules/modProgressions.js';
 import { ModTrainer } from './modules/modTrainer.js';
 import { ModFavorites } from './modules/modFavorites.js';
 import { ModComposer } from './modules/modComposer.js';
+import { ModJam } from './modules/modJam.js';
 
 const MODULES = {
   chords: ModChords,
@@ -36,6 +37,7 @@ const MODULES = {
   trainer: ModTrainer,
   favorites: ModFavorites,
   composer: ModComposer,
+  jam: ModJam,
 };
 
 const App = {
@@ -301,7 +303,7 @@ const App = {
       syncUi();
     });
     drumBtn?.addEventListener('click', () => { RhythmEngine.toggleDrums(); syncUi(); });
-    stopBtn?.addEventListener('click', () => { RhythmEngine.stop(); AudioEngine.stopSequence(); syncUi(); });
+    stopBtn?.addEventListener('click', () => { RhythmEngine.stop(); AudioEngine.stopSequence(); ModJam.stopJam(); syncUi(); });
 
     bpmRange?.addEventListener('input', (e) => {
       RhythmEngine.setBpm(Number(e.target.value));
@@ -371,8 +373,11 @@ const App = {
   navigate(moduleId, externalOpts = null) {
     if (!MODULES[moduleId]) return;
     AudioEngine.stopSequence();
-    // Reset any playing flag on previous module cleanly
+    // Reset any playing flag / scheduled jam timers on previous module cleanly
     const prevMod = MODULES[this.currentModuleId];
+    if (prevMod && typeof prevMod.stopJam === 'function') {
+      prevMod.stopJam();
+    }
     if (prevMod && prevMod.state && 'isPlaying' in prevMod.state) {
       prevMod.state.isPlaying = false;
     }

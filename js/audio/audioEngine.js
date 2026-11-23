@@ -1,11 +1,41 @@
 /**
- * Web Audio API Plucked Guitar Synthesizer & Custom Cadence Playback Engine
- * Supports standard presets + custom 8-step per-chord strumming patterns
- * ('D' = Down, 'U' = Up, 'PM' = Palm Mute, 'ARP' = Arpeggio/Fingerstyle, 'X' = Mute/Percussive, '-' = Rest)
- * with live beat/step callbacks for synchronized visual rhythm indicators.
+ * Advanced Multi-Engine Web Audio Synthesizer — Chord & Scale Library
+ *
+ * 1. Physical Modeling Engine (Extended Karplus-Strong + Pick-Position Comb +
+ *    Fractional Delay Interpolation + Acoustic Body Formants + Guitar Cab EQ + Stereo Room Reverb)
+ *    for ultra-natural, realistic plucked acoustic & electric instruments.
+ * 2. Diverse Digital Synthesizer Engines (FM Electric Piano, Analog Pad, EDM Pluck,
+ *    DX7 Crystal Bell, 8-Bit Chiptune, Hammond B3 Drawbar Organ, Lo-Fi Tape Keys).
+ * 3. Custom 8-step per-chord strumming cadences + melodic articulations.
  */
 
 import { Theory } from '../core/theory.js';
+
+export const TONE_PRESETS = [
+  // --- Acústicos & Orgânicos (Modelagem Física Karplus-Strong) ---
+  { id: 'nylon', name: 'Violão Nylon (Clássico)', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.42, damping: 0.9958, pickPos: 0.28, body: 'nylon', reverb: 0.28, drive: 0 },
+  { id: 'acoustic', name: 'Violão Aço (Folk)', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.72, damping: 0.9964, pickPos: 0.16, body: 'steel', reverb: 0.24, drive: 0 },
+  { id: 'twelve_string', name: 'Violão 12 Cordas', group: 'Acústicos & Orgânicos', engine: 'ks12', brightness: 0.78, damping: 0.9966, pickPos: 0.14, body: 'steel', reverb: 0.30, drive: 0 },
+  { id: 'clean', name: 'Guitarra Clean (Strat)', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.68, damping: 0.9972, pickPos: 0.20, body: 'fender', reverb: 0.22, drive: 0 },
+  { id: 'jazz', name: 'Jazz Hollowbody', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.32, damping: 0.9960, pickPos: 0.36, body: 'jazz', reverb: 0.25, drive: 0 },
+  { id: 'overdrive', name: 'Blues Crunch (Valvulado)', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.74, damping: 0.9975, pickPos: 0.15, body: 'cab', reverb: 0.18, drive: 14 },
+  { id: 'metal_lead', name: 'Rock / Metal High-Gain', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.85, damping: 0.9980, pickPos: 0.11, body: 'metal', reverb: 0.14, drive: 38 },
+  { id: 'bass_finger', name: 'Baixo Elétrico (Finger)', group: 'Acústicos & Orgânicos', engine: 'ks', brightness: 0.35, damping: 0.9968, pickPos: 0.30, body: 'bass', reverb: 0.10, drive: 0, octaveShift: -12 },
+
+  // --- Especiais & Modulados ---
+  { id: 'chorus_dream', name: 'Clean Chorus Ambient', group: 'Modulados & Especiais', engine: 'ks', brightness: 0.70, damping: 0.9976, pickPos: 0.22, body: 'fender', reverb: 0.48, chorus: true, drive: 0 },
+  { id: 'tremolo_surf', name: 'Vintage Surf Tremolo', group: 'Modulados & Especiais', engine: 'ks', brightness: 0.76, damping: 0.9970, pickPos: 0.14, body: 'fender', reverb: 0.45, tremolo: true, drive: 4 },
+  { id: 'harp_pluck', name: 'Harpa / Koto Acústico', group: 'Modulados & Especiais', engine: 'ks', brightness: 0.62, damping: 0.9978, pickPos: 0.42, body: 'harp', reverb: 0.44, drive: 0 },
+
+  // --- Digitais & Sintetizadores ---
+  { id: 'epiano', name: 'Rhodes / Piano Elétrico', group: 'Digitais & Sintetizadores', engine: 'fm_epiano', reverb: 0.28 },
+  { id: 'synth_pad', name: 'Synth Pad Analógico', group: 'Digitais & Sintetizadores', engine: 'analog_pad', reverb: 0.46 },
+  { id: 'synth_pluck', name: 'Synth Pluck (EDM)', group: 'Digitais & Sintetizadores', engine: 'synth_pluck', reverb: 0.28 },
+  { id: 'fm_bell', name: 'FM Crystal Bell (DX7)', group: 'Digitais & Sintetizadores', engine: 'fm_bell', reverb: 0.42 },
+  { id: 'organ_b3', name: 'Órgão Hammond B3', group: 'Digitais & Sintetizadores', engine: 'organ_b3', reverb: 0.22 },
+  { id: 'lofi_keys', name: 'Lo-Fi Tape Keys', group: 'Digitais & Sintetizadores', engine: 'lofi_keys', reverb: 0.32 },
+  { id: 'chiptune', name: '8-Bit Chiptune (Retro)', group: 'Digitais & Sintetizadores', engine: 'chiptune', reverb: 0.06 },
+];
 
 export const CHORD_CADENCES = [
   { id: 'down', label: 'Para Baixo', steps: ['D', '-', '-', '-', '-', '-', '-', '-'] },
@@ -40,36 +70,149 @@ export function getPresetSteps(cadenceId) {
   return found.steps.slice();
 }
 
+export function getTonePreset(id) {
+  return TONE_PRESETS.find((t) => t.id === id) || TONE_PRESETS[1];
+}
+
+/**
+ * Pure-JS Extended Karplus-Strong Physical Plucked String Synthesizer.
+ * Generates an organic plucked string waveform with fractional-delay tuning,
+ * pick-position comb filtering, frequency-dependent natural damping & soft pick attack.
+ */
+export function synthesizeKarplusStrongSamples(freq, sampleRate, durationSec, {
+  brightness = 0.65,
+  damping = 0.9964,
+  pickPos = 0.18,
+  palmMute = false,
+  legato = false,
+} = {}) {
+  const safeFreq = Math.max(40, Math.min(2400, freq));
+  const totalSamples = Math.max(128, Math.floor(sampleRate * durationSec));
+  const out = new Float32Array(totalSamples);
+
+  const pitchFactor = Math.min(1, Math.max(0, (safeFreq - 80) / 700));
+  const decay = palmMute
+    ? Math.min(0.955, 0.945 - pitchFactor * 0.03)
+    : damping - pitchFactor * 0.0022;
+  const blend = palmMute ? 0.25 : (0.36 + brightness * 0.34);
+
+  // Compensate for the 2-point averaging filter phase shift so pitch is exact (< 1 cent) across all frets
+  const compensatedPeriod = (sampleRate / safeFreq) + (1 - blend);
+  const N = Math.max(8, Math.floor(compensatedPeriod));
+  const frac = compensatedPeriod - N;
+  const L = N + 1;
+
+  // 1. Exciter: warm shaped noise burst + pluck body impulse
+  const ring = new Float32Array(L);
+  let lp = 0;
+  const excAlpha = palmMute ? 0.18 : (0.14 + brightness * 0.62);
+  for (let i = 0; i < L; i++) {
+    const white = Math.random() * 2 - 1;
+    lp = lp + excAlpha * (white - lp);
+    const tri = 1 - Math.abs((2 * i) / L - 1);
+    ring[i] = lp * 0.78 + (tri - 0.5) * 0.45;
+  }
+
+  // Remove DC offset from exciter
+  let mean = 0;
+  for (let i = 0; i < L; i++) mean += ring[i];
+  mean /= L;
+  for (let i = 0; i < L; i++) ring[i] -= mean;
+
+  // 2. Pick-position comb filter (models where along the string the pick/finger strikes)
+  const pickDelay = Math.max(1, Math.min(L - 1, Math.round(L * pickPos)));
+  const combed = new Float32Array(L);
+  for (let i = 0; i < L; i++) {
+    combed[i] = ring[i] - 0.68 * ring[(i + pickDelay) % L];
+  }
+  for (let i = 0; i < L; i++) ring[i] = combed[i];
+
+  // 3. Karplus-Strong feedback loop with exact fractional delay & natural high-freq damping
+  let idx = 0;
+  let prev = 0;
+  const attackSamples = Math.floor(sampleRate * (legato ? 0.024 : 0.0028));
+
+  for (let i = 0; i < totalSamples; i++) {
+    const nextIdx = (idx + 1) % L;
+    const nextIdx2 = (idx + 2) % L;
+    // Delay N + frac: ring[idx] is (N+1) samples old, ring[nextIdx] is N samples old
+    const curr = ring[idx] * frac + ring[nextIdx] * (1 - frac);
+    const next = ring[nextIdx] * frac + ring[nextIdx2] * (1 - frac);
+
+    const filtered = decay * (blend * curr + (1 - blend) * next);
+    const sampleOut = palmMute ? (0.45 * filtered + 0.55 * prev) : filtered;
+    prev = sampleOut;
+    ring[idx] = sampleOut;
+
+    let env = 1;
+    if (i < attackSamples) env = i / attackSamples;
+    else if (i > totalSamples - 1200) env = Math.max(0, (totalSamples - i) / 1200);
+
+    out[i] = curr * env;
+    idx = nextIdx;
+  }
+
+  // Normalize peak softly so every string has consistent musical presence
+  let peak = 0;
+  for (let i = 0; i < totalSamples; i++) {
+    const a = Math.abs(out[i]);
+    if (a > peak) peak = a;
+  }
+  if (peak > 0.0001) {
+    const norm = 0.85 / peak;
+    for (let i = 0; i < totalSamples; i++) out[i] *= norm;
+  }
+
+  return out;
+}
+
 class GuitarAudioEngine {
   constructor() {
     this.ctx = null;
     this.masterGain = null;
+    this.reverbNode = null;
+    this.reverbGain = null;
+    this.dryGain = null;
     this.tone = 'acoustic';
-    this.volume = 0.72;
+    this.volume = 0.76;
     this.muted = false;
     this.activeTimers = [];
     this.isLooping = false;
     this.chordCadence = 'down_up';
     this.melodicCadence = 'asc_desc';
     this.playbackSessionId = 0;
+    this.ksBufferCache = new Map(); // LRU cache of synthesized Karplus-Strong AudioBuffers
   }
 
   ensureContext() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioCtx();
+
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.value = this.muted ? 0 : this.volume;
 
-      this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.value = -14;
-      this.compressor.knee.value = 18;
-      this.compressor.ratio.value = 4;
-      this.compressor.attack.value = 0.005;
-      this.compressor.release.value = 0.15;
+      this.dryGain = this.ctx.createGain();
+      this.dryGain.gain.value = 1.0;
 
-      this.masterGain.connect(this.compressor);
-      this.compressor.connect(this.ctx.destination);
+      // Synthesized Stereo Wooden Studio Room Reverb (100% offline!)
+      this.reverbNode = this.ctx.createConvolver();
+      this.reverbNode.buffer = this.createRoomImpulse(this.ctx, 1.15, 2.8);
+      this.reverbGain = this.ctx.createGain();
+      this.reverbGain.gain.value = 0.24;
+
+      this.compressor = this.ctx.createDynamicsCompressor();
+      this.compressor.threshold.value = -12;
+      this.compressor.knee.value = 20;
+      this.compressor.ratio.value = 3.5;
+      this.compressor.attack.value = 0.004;
+      this.compressor.release.value = 0.16;
+
+      this.dryGain.connect(this.compressor);
+      this.reverbNode.connect(this.reverbGain);
+      this.reverbGain.connect(this.compressor);
+      this.compressor.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
@@ -77,20 +220,41 @@ class GuitarAudioEngine {
     return this.ctx;
   }
 
-  setTone(tone) {
-    this.tone = tone;
+  /**
+   * Generates a natural stereo wooden room impulse response for the ConvolverNode.
+   */
+  createRoomImpulse(ctx, seconds = 1.15, decay = 2.8) {
+    const len = Math.floor(ctx.sampleRate * seconds);
+    const impulse = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = impulse.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < len; i++) {
+        const t = i / len;
+        const env = Math.pow(1 - t, decay);
+        const n = (Math.random() * 2 - 1) * env;
+        // Warm acoustic wall damping
+        lp = lp + 0.22 * (n - lp);
+        data[i] = lp;
+      }
+    }
+    return impulse;
+  }
+
+  setTone(toneId) {
+    const preset = getTonePreset(toneId);
+    this.tone = preset.id;
+    if (this.reverbGain && this.ctx) {
+      this.reverbGain.gain.setTargetAtTime(preset.reverb ?? 0.22, this.ctx.currentTime, 0.05);
+    }
   }
 
   setChordCadence(cadenceId) {
-    if (CHORD_CADENCES.some((c) => c.id === cadenceId)) {
-      this.chordCadence = cadenceId;
-    }
+    if (CHORD_CADENCES.some((c) => c.id === cadenceId)) this.chordCadence = cadenceId;
   }
 
   setMelodicCadence(cadenceId) {
-    if (MELODIC_CADENCES.some((c) => c.id === cadenceId)) {
-      this.melodicCadence = cadenceId;
-    }
+    if (MELODIC_CADENCES.some((c) => c.id === cadenceId)) this.melodicCadence = cadenceId;
   }
 
   setVolume(vol) {
@@ -108,114 +272,418 @@ class GuitarAudioEngine {
     return this.muted;
   }
 
-  playNote(midi, duration = 1.6, delaySec = 0, velocity = 0.8, { palmMute = false, legato = false } = {}) {
+  getCachedKSBuffer(ctx, preset, midi, palmMute, legato) {
+    const key = `${preset.id}:${midi}:${palmMute ? 1 : 0}:${legato ? 1 : 0}`;
+    if (this.ksBufferCache.has(key)) return this.ksBufferCache.get(key);
+
+    const freq = Theory.midiToFreq(midi);
+    const dur = palmMute ? 0.42 : 2.35;
+    const samples = synthesizeKarplusStrongSamples(freq, ctx.sampleRate, dur, {
+      brightness: preset.brightness,
+      damping: preset.damping,
+      pickPos: preset.pickPos,
+      palmMute,
+      legato,
+    });
+
+    const buffer = ctx.createBuffer(1, samples.length, ctx.sampleRate);
+    buffer.getChannelData(0).set(samples);
+
+    // Keep cache bounded (~180 notes max)
+    if (this.ksBufferCache.size >= 180) {
+      const oldest = this.ksBufferCache.keys().next().value;
+      this.ksBufferCache.delete(oldest);
+    }
+    this.ksBufferCache.set(key, buffer);
+    return buffer;
+  }
+
+  /**
+   * Connects a note's output through realistic Acoustic Body Formants or Electric Amp Cabinet EQ.
+   */
+  routeThroughBody(ctx, inputNode, bodyType, drive, now, destinationDry, destinationWet) {
+    let stage = inputNode;
+
+    if (drive && drive > 0) {
+      const preEq = ctx.createBiquadFilter();
+      preEq.type = 'highpass';
+      preEq.frequency.value = 135; // Tightens bass before overdrive like a Tube Screamer!
+      const shaper = ctx.createWaveShaper();
+      shaper.curve = this.makeTubeCurve(drive);
+      shaper.oversample = '4x';
+      stage.connect(preEq);
+      preEq.connect(shaper);
+      stage = shaper;
+    }
+
+    if (bodyType === 'nylon') {
+      const cavity = ctx.createBiquadFilter();
+      cavity.type = 'peaking'; cavity.frequency.value = 115; cavity.Q.value = 2.0; cavity.gain.value = 4.2;
+      const wood = ctx.createBiquadFilter();
+      wood.type = 'peaking'; wood.frequency.value = 240; wood.Q.value = 1.6; wood.gain.value = 2.6;
+      const soften = ctx.createBiquadFilter();
+      soften.type = 'lowpass'; soften.frequency.value = 3400;
+      stage.connect(cavity); cavity.connect(wood); wood.connect(soften);
+      stage = soften;
+    } else if (bodyType === 'steel') {
+      const cavity = ctx.createBiquadFilter();
+      cavity.type = 'peaking'; cavity.frequency.value = 105; cavity.Q.value = 1.9; cavity.gain.value = 3.2;
+      const sparkle = ctx.createBiquadFilter();
+      sparkle.type = 'highshelf'; sparkle.frequency.value = 3200; sparkle.gain.value = 2.4;
+      const air = ctx.createBiquadFilter();
+      air.type = 'lowpass'; air.frequency.value = 6800;
+      stage.connect(cavity); cavity.connect(sparkle); sparkle.connect(air);
+      stage = air;
+    } else if (bodyType === 'fender') {
+      const scoop = ctx.createBiquadFilter();
+      scoop.type = 'peaking'; scoop.frequency.value = 500; scoop.Q.value = 1.0; scoop.gain.value = -2.5;
+      const chime = ctx.createBiquadFilter();
+      chime.type = 'peaking'; chime.frequency.value = 2600; chime.Q.value = 1.2; chime.gain.value = 3.0;
+      const cab = ctx.createBiquadFilter();
+      cab.type = 'lowpass'; cab.frequency.value = 5400;
+      stage.connect(scoop); scoop.connect(chime); chime.connect(cab);
+      stage = cab;
+    } else if (bodyType === 'jazz') {
+      const warm = ctx.createBiquadFilter();
+      warm.type = 'peaking'; warm.frequency.value = 280; warm.Q.value = 1.2; warm.gain.value = 3.5;
+      const roll = ctx.createBiquadFilter();
+      roll.type = 'lowpass'; roll.frequency.value = 2050;
+      stage.connect(warm); warm.connect(roll);
+      stage = roll;
+    } else if (bodyType === 'cab' || bodyType === 'metal') {
+      const lowPunch = ctx.createBiquadFilter();
+      lowPunch.type = 'peaking'; lowPunch.frequency.value = 130; lowPunch.Q.value = 1.4; lowPunch.gain.value = bodyType === 'metal' ? 4.5 : 2.5;
+      const midShape = ctx.createBiquadFilter();
+      midShape.type = 'peaking'; midShape.frequency.value = bodyType === 'metal' ? 680 : 900; midShape.Q.value = 1.1; midShape.gain.value = bodyType === 'metal' ? -4.0 : 2.2;
+      const cabRoll = ctx.createBiquadFilter();
+      cabRoll.type = 'lowpass'; cabRoll.frequency.value = bodyType === 'metal' ? 4300 : 4000; cabRoll.Q.value = 1.4;
+      stage.connect(lowPunch); lowPunch.connect(midShape); midShape.connect(cabRoll);
+      stage = cabRoll;
+    } else if (bodyType === 'bass') {
+      const sub = ctx.createBiquadFilter();
+      sub.type = 'lowshelf'; sub.frequency.value = 140; sub.gain.value = 5.5;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 1450;
+      stage.connect(sub); sub.connect(lp);
+      stage = lp;
+    } else if (bodyType === 'harp') {
+      const shimmer = ctx.createBiquadFilter();
+      shimmer.type = 'highshelf'; shimmer.frequency.value = 2800; shimmer.gain.value = 3.0;
+      stage.connect(shimmer);
+      stage = shimmer;
+    }
+
+    stage.connect(destinationDry);
+    stage.connect(destinationWet);
+  }
+
+  /**
+   * Warm asymmetric tube saturation curve (much smoother than harsh digital clipping).
+   */
+  makeTubeCurve(amount) {
+    const n = 512;
+    const curve = new Float32Array(n);
+    const k = amount;
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      // Soft tanh-like asymmetric saturation for rich even+odd tube harmonics
+      curve[i] = Math.tanh((x + 0.08) * (1 + k * 0.14)) - Math.tanh(0.08 * (1 + k * 0.14));
+    }
+    return curve;
+  }
+
+  /**
+   * Plays a single note using the active tone preset (Physical Modeling OR Digital Synth).
+   */
+  playNote(midi, duration = 1.8, delaySec = 0, velocity = 0.82, { palmMute = false, legato = false } = {}) {
     if (this.muted || midi === null || midi === undefined) return;
     const ctx = this.ensureContext();
     const now = ctx.currentTime + delaySec;
-    const freq = Theory.midiToFreq(midi);
+    const preset = getTonePreset(this.tone);
+    const shiftedMidi = midi + (preset.octaveShift || 0);
 
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const osc3 = ctx.createOscillator();
+    // Ensure reverb blend matches current preset
+    this.reverbGain.gain.setTargetAtTime(preset.reverb ?? 0.22, ctx.currentTime, 0.04);
 
-    const tonePresets = {
-      acoustic: { t1: 'triangle', t2: 'sawtooth', t3: 'sine', g1: 0.55, g2: 0.28, g3: 0.18, cutoff: 3400, decay: 1.9, drive: 0 },
-      clean: { t1: 'sine', t2: 'triangle', t3: 'sawtooth', g1: 0.5, g2: 0.35, g3: 0.14, cutoff: 4200, decay: 2.1, drive: 0 },
-      jazz: { t1: 'sine', t2: 'triangle', t3: 'sine', g1: 0.65, g2: 0.3, g3: 0.1, cutoff: 1450, decay: 1.6, drive: 0 },
-      overdrive: { t1: 'sawtooth', t2: 'square', t3: 'triangle', g1: 0.45, g2: 0.25, g3: 0.2, cutoff: 2600, decay: 2.0, drive: 18 },
-    };
-    const p = tonePresets[this.tone] || tonePresets.acoustic;
+    if (preset.engine === 'ks' || preset.engine === 'ks12') {
+      this.playPhysicalPluck(ctx, preset, shiftedMidi, duration, now, velocity, { palmMute, legato });
+      if (preset.engine === 'ks12') {
+        // 12-string second course: octave up on lower 4 strings, detuned unison on top 2 strings
+        const pairMidi = shiftedMidi < 57 ? shiftedMidi + 12 : shiftedMidi;
+        this.playPhysicalPluck(ctx, preset, pairMidi, duration * 0.95, now + 0.007, velocity * 0.55, {
+          palmMute,
+          legato,
+          detuneCents: shiftedMidi < 57 ? 4 : 9,
+        });
+      }
+      return;
+    }
 
-    osc1.type = p.t1;
-    osc2.type = p.t2;
-    osc3.type = p.t3;
+    this.playDigitalSynth(ctx, preset, shiftedMidi, duration, now, velocity, { palmMute, legato });
+  }
 
-    osc1.frequency.setValueAtTime(freq, now);
-    osc2.frequency.setValueAtTime(freq * 2, now);
-    osc2.detune.setValueAtTime(3, now);
-    osc3.frequency.setValueAtTime(freq, now);
-    osc3.detune.setValueAtTime(-4, now);
+  playPhysicalPluck(ctx, preset, midi, duration, now, velocity, { palmMute = false, legato = false, detuneCents = 0 } = {}) {
+    const buffer = this.getCachedKSBuffer(ctx, preset, midi, palmMute, legato);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
 
-    const g1 = ctx.createGain();
-    const g2 = ctx.createGain();
-    const g3 = ctx.createGain();
-    g1.gain.value = p.g1;
-    g2.gain.value = palmMute ? p.g2 * 0.45 : p.g2;
-    g3.gain.value = p.g3;
+    // Subtle organic humanization (+ optional chorus/12-string detune)
+    const humanDetune = (Math.random() - 0.5) * 2.4 + detuneCents;
+    src.detune.setValueAtTime(humanDetune, now);
 
-    const actualDuration = palmMute ? Math.min(duration, 0.24) : duration;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.Q.value = palmMute ? 2.4 : (this.tone === 'acoustic' ? 1.8 : 1.1);
-    const startCut = palmMute
-      ? Math.min(1150, Math.max(380, freq * 2.1))
-      : Math.min(9000, p.cutoff + freq * 2.5);
-    const endCut = palmMute ? Math.max(180, freq * 0.9) : Math.max(260, freq * 1.6);
-
-    filter.frequency.setValueAtTime(startCut, now);
-    filter.frequency.exponentialRampToValueAtTime(endCut, now + Math.min(actualDuration, palmMute ? 0.14 : p.decay));
+    const actualDur = palmMute ? Math.min(duration, 0.32) : Math.min(duration + 0.45, buffer.duration);
 
     const env = ctx.createGain();
-    const peak = (palmMute ? 0.28 : 0.24) * velocity;
-    const attack = legato ? 0.032 : 0.007;
+    const gainLevel = 0.48 * velocity * (preset.drive > 20 ? 0.72 : 1);
+    env.gain.setValueAtTime(gainLevel, now);
+    env.gain.setValueAtTime(gainLevel, now + Math.max(0.05, actualDur - 0.14));
+    env.gain.exponentialRampToValueAtTime(0.0008, now + actualDur);
+
+    let outNode = env;
+    src.connect(env);
+
+    // Optional Chorus doubling voice
+    if (preset.chorus) {
+      const src2 = ctx.createBufferSource();
+      src2.buffer = buffer;
+      src2.detune.setValueAtTime(humanDetune + 11, now);
+      const g2 = ctx.createGain();
+      g2.gain.value = 0.52;
+      src2.connect(g2);
+      g2.connect(env);
+      src2.start(now + 0.011);
+      src2.stop(now + actualDur + 0.03);
+    }
+
+    // Optional Vintage Tremolo LFO
+    if (preset.tremolo) {
+      const tremGain = ctx.createGain();
+      tremGain.gain.value = 0.78;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 5.6;
+      const lfoDepth = ctx.createGain();
+      lfoDepth.gain.value = 0.24;
+      lfo.connect(lfoDepth);
+      lfoDepth.connect(tremGain.gain);
+      env.connect(tremGain);
+      lfo.start(now);
+      lfo.stop(now + actualDur + 0.05);
+      outNode = tremGain;
+    }
+
+    this.routeThroughBody(ctx, outNode, preset.body, preset.drive, now, this.dryGain, this.reverbNode);
+
+    src.start(now);
+    src.stop(now + actualDur + 0.04);
+  }
+
+  /**
+   * Rich Digital Synthesizer Engines (Rhodes FM, Analog Pad, EDM Pluck, DX7 Bell, Organ B3, Lo-Fi, Chiptune).
+   */
+  playDigitalSynth(ctx, preset, midi, duration, now, velocity, { palmMute = false, legato = false } = {}) {
+    const freq = Theory.midiToFreq(midi);
+    const dur = palmMute ? Math.min(duration, 0.26) : Math.max(0.55, duration);
+    const env = ctx.createGain();
+    env.connect(this.dryGain);
+    env.connect(this.reverbNode);
+
+    if (preset.engine === 'fm_epiano') {
+      // Rhodes Electric Piano: Carrier sine + Modulator at 1:14 tine ratio decaying fast + warm 2nd harmonic
+      const carrier = ctx.createOscillator();
+      const mod = ctx.createOscillator();
+      const modGain = ctx.createGain();
+      const body2 = ctx.createOscillator();
+      const body2Gain = ctx.createGain();
+
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(freq, now);
+      mod.type = 'sine';
+      mod.frequency.setValueAtTime(freq * 7, now);
+      modGain.gain.setValueAtTime(freq * (palmMute ? 0.5 : 1.8), now);
+      modGain.gain.exponentialRampToValueAtTime(0.5, now + 0.22);
+
+      body2.type = 'triangle';
+      body2.frequency.setValueAtTime(freq * 2, now);
+      body2Gain.gain.setValueAtTime(0.12, now);
+      body2Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+      mod.connect(modGain);
+      modGain.connect(carrier.frequency);
+      carrier.connect(env);
+      body2.connect(body2Gain);
+      body2Gain.connect(env);
+
+      const peak = 0.28 * velocity;
+      env.gain.setValueAtTime(0.0001, now);
+      env.gain.linearRampToValueAtTime(peak, now + (legato ? 0.025 : 0.006));
+      env.gain.exponentialRampToValueAtTime(peak * 0.45, now + 0.25);
+      env.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+
+      [carrier, mod, body2].forEach((o) => { o.start(now); o.stop(now + dur + 0.05); });
+      return;
+    }
+
+    if (preset.engine === 'analog_pad') {
+      // Warm detuned 3-oscillator analog supersaw pad with silky slow lowpass swell
+      const detunes = [-10, 0, 10];
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.Q.value = 1.4;
+      filter.frequency.setValueAtTime(palmMute ? 550 : 420, now);
+      filter.frequency.exponentialRampToValueAtTime(palmMute ? 300 : 2100, now + Math.min(0.45, dur * 0.45));
+      filter.frequency.exponentialRampToValueAtTime(650, now + dur);
+      filter.connect(env);
+
+      const oscs = detunes.map((dt) => {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(freq, now);
+        o.detune.setValueAtTime(dt, now);
+        const g = ctx.createGain();
+        g.gain.value = 0.33;
+        o.connect(g);
+        g.connect(filter);
+        o.start(now);
+        o.stop(now + dur + 0.08);
+        return o;
+      });
+
+      const peak = 0.20 * velocity;
+      env.gain.setValueAtTime(0.0001, now);
+      env.gain.linearRampToValueAtTime(peak, now + (palmMute ? 0.015 : 0.14));
+      env.gain.setValueAtTime(peak * 0.85, now + Math.max(0.16, dur * 0.7));
+      env.gain.exponentialRampToValueAtTime(0.0008, now + dur + 0.06);
+      void oscs;
+      return;
+    }
+
+    if (preset.engine === 'synth_pluck') {
+      // Punchy EDM / Future Bass resonant filter-pluck
+      const o1 = ctx.createOscillator();
+      const o2 = ctx.createOscillator();
+      o1.type = 'sawtooth'; o1.frequency.setValueAtTime(freq, now);
+      o2.type = 'square'; o2.frequency.setValueAtTime(freq, now); o2.detune.setValueAtTime(7, now);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.Q.value = 4.2;
+      filter.frequency.setValueAtTime(palmMute ? 1200 : 5400, now);
+      filter.frequency.exponentialRampToValueAtTime(Math.max(220, freq * 1.15), now + (palmMute ? 0.12 : 0.32));
+
+      const g2 = ctx.createGain(); g2.gain.value = 0.35;
+      o1.connect(filter); o2.connect(g2); g2.connect(filter);
+      filter.connect(env);
+
+      const peak = 0.24 * velocity;
+      env.gain.setValueAtTime(0.0001, now);
+      env.gain.linearRampToValueAtTime(peak, now + 0.004);
+      env.gain.exponentialRampToValueAtTime(0.0008, now + Math.min(dur, 0.9));
+
+      o1.start(now); o2.start(now);
+      o1.stop(now + Math.min(dur, 0.95) + 0.04); o2.stop(now + Math.min(dur, 0.95) + 0.04);
+      return;
+    }
+
+    if (preset.engine === 'fm_bell') {
+      // Classic DX7 Crystal Bell (non-integer 3.5x FM ratio)
+      const car = ctx.createOscillator();
+      const mod = ctx.createOscillator();
+      const modG = ctx.createGain();
+      car.type = 'sine'; car.frequency.setValueAtTime(freq, now);
+      mod.type = 'sine'; mod.frequency.setValueAtTime(freq * 3.5, now);
+      modG.gain.setValueAtTime(freq * 3.8, now);
+      modG.gain.exponentialRampToValueAtTime(1, now + Math.min(1.1, dur));
+
+      mod.connect(modG); modG.connect(car.frequency); car.connect(env);
+      const peak = 0.25 * velocity;
+      env.gain.setValueAtTime(0.0001, now);
+      env.gain.linearRampToValueAtTime(peak, now + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+
+      car.start(now); mod.start(now);
+      car.stop(now + dur + 0.05); mod.stop(now + dur + 0.05);
+      return;
+    }
+
+    if (preset.engine === 'organ_b3') {
+      // Hammond B3 additive drawbars (16', 8', 5 1/3', 4', 2')
+      const drawbars = [
+        { mult: 0.5, gain: 0.26 },
+        { mult: 1.0, gain: 0.42 },
+        { mult: 1.5, gain: 0.16 },
+        { mult: 2.0, gain: 0.24 },
+        { mult: 4.0, gain: 0.10 },
+      ];
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = palmMute ? 1200 : 3200;
+      lp.connect(env);
+
+      drawbars.forEach((db) => {
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq * db.mult, now);
+        const g = ctx.createGain(); g.gain.value = db.gain;
+        o.connect(g); g.connect(lp);
+        o.start(now); o.stop(now + dur + 0.04);
+      });
+
+      const peak = 0.24 * velocity;
+      env.gain.setValueAtTime(0.0001, now);
+      env.gain.linearRampToValueAtTime(peak, now + 0.012);
+      env.gain.setValueAtTime(peak * 0.9, now + Math.max(0.06, dur - 0.08));
+      env.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+      return;
+    }
+
+    if (preset.engine === 'lofi_keys') {
+      // Cozy Lo-Fi Tape Keys (warm triangle + sine, gentle pitch wow/flutter LFO, tape lowpass)
+      const o1 = ctx.createOscillator();
+      const o2 = ctx.createOscillator();
+      o1.type = 'triangle'; o1.frequency.setValueAtTime(freq, now);
+      o2.type = 'sine'; o2.frequency.setValueAtTime(freq * 2, now);
+
+      // Tape wobble LFO
+      const wow = ctx.createOscillator();
+      wow.frequency.value = 2.4;
+      const wowG = ctx.createGain(); wowG.gain.value = 9; // ±9 cents tape flutter
+      wow.connect(wowG); wowG.connect(o1.detune); wowG.connect(o2.detune);
+
+      const g2 = ctx.createGain(); g2.gain.value = 0.15;
+      const tapeFilter = ctx.createBiquadFilter();
+      tapeFilter.type = 'lowpass';
+      tapeFilter.frequency.setValueAtTime(palmMute ? 680 : 1450, now);
+      tapeFilter.Q.value = 1.6;
+
+      o1.connect(tapeFilter); o2.connect(g2); g2.connect(tapeFilter);
+      tapeFilter.connect(env);
+
+      const peak = 0.28 * velocity;
+      env.gain.setValueAtTime(0.0001, now);
+      env.gain.linearRampToValueAtTime(peak, now + 0.022);
+      env.gain.exponentialRampToValueAtTime(peak * 0.55, now + 0.35);
+      env.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+
+      [o1, o2, wow].forEach((o) => { o.start(now); o.stop(now + dur + 0.05); });
+      return;
+    }
+
+    // 8-Bit Chiptune (Retro NES Pulse/Square wave)
+    const sq = ctx.createOscillator();
+    sq.type = 'square';
+    sq.frequency.setValueAtTime(freq, now);
+    const bitFilter = ctx.createBiquadFilter();
+    bitFilter.type = 'lowpass';
+    bitFilter.frequency.value = palmMute ? 1100 : 4800;
+    sq.connect(bitFilter);
+    bitFilter.connect(env);
+
+    const peak = 0.15 * velocity;
     env.gain.setValueAtTime(0.0001, now);
-    env.gain.linearRampToValueAtTime(peak, now + attack);
-    if (palmMute) {
-      env.gain.exponentialRampToValueAtTime(0.0008, now + actualDuration);
-    } else {
-      env.gain.exponentialRampToValueAtTime(peak * 0.48, now + 0.14);
-      env.gain.exponentialRampToValueAtTime(0.0008, now + actualDuration);
-    }
-
-    osc1.connect(g1);
-    osc2.connect(g2);
-    osc3.connect(g3);
-
-    if (p.drive > 0) {
-      const shaper = ctx.createWaveShaper();
-      shaper.curve = this.makeDistortionCurve(p.drive);
-      shaper.oversample = '2x';
-      g1.connect(shaper);
-      g2.connect(shaper);
-      g3.connect(shaper);
-      shaper.connect(filter);
-    } else {
-      g1.connect(filter);
-      g2.connect(filter);
-      g3.connect(filter);
-    }
-
-    filter.connect(env);
-    env.connect(this.masterGain);
-
-    if (!legato && (this.tone === 'acoustic' || this.tone === 'clean' || palmMute)) {
-      const bufSize = Math.floor(ctx.sampleRate * 0.016);
-      const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-      const data = noiseBuf.getChannelData(0);
-      for (let i = 0; i < bufSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.28));
-      }
-      const noise = ctx.createBufferSource();
-      noise.buffer = noiseBuf;
-      const nFilter = ctx.createBiquadFilter();
-      nFilter.type = 'bandpass';
-      nFilter.frequency.value = palmMute ? 750 : 2800;
-      const nGain = ctx.createGain();
-      nGain.gain.setValueAtTime((palmMute ? 0.12 : 0.07) * velocity, now);
-      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
-      noise.connect(nFilter);
-      nFilter.connect(nGain);
-      nGain.connect(this.masterGain);
-      noise.start(now);
-    }
-
-    osc1.start(now);
-    osc2.start(now);
-    osc3.start(now);
-    osc1.stop(now + actualDuration + 0.05);
-    osc2.stop(now + actualDuration + 0.05);
-    osc3.stop(now + actualDuration + 0.05);
+    env.gain.linearRampToValueAtTime(peak, now + 0.004);
+    env.gain.exponentialRampToValueAtTime(peak * 0.5, now + 0.14);
+    env.gain.exponentialRampToValueAtTime(0.0008, now + Math.min(dur, 0.85));
+    sq.start(now);
+    sq.stop(now + Math.min(dur, 0.9) + 0.04);
   }
 
   /**
@@ -235,25 +703,15 @@ class GuitarAudioEngine {
     src.buffer = buf;
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.value = 1400;
-    filter.Q.value = 1.4;
+    filter.frequency.value = 1350;
+    filter.Q.value = 1.5;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.24, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
     src.connect(filter);
     filter.connect(gain);
-    gain.connect(this.masterGain);
+    gain.connect(this.dryGain);
     src.start(now);
-  }
-
-  makeDistortionCurve(amount) {
-    const n = 256;
-    const curve = new Float32Array(n);
-    for (let i = 0; i < n; i++) {
-      const x = (i * 2) / n - 1;
-      curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
-    }
-    return curve;
   }
 
   playChord(midis, { strumMs = 30, direction = 'down', duration = 2.0, arpeggiate = false, palmMute = false } = {}) {
@@ -266,30 +724,24 @@ class GuitarAudioEngine {
     });
   }
 
-  /**
-   * Executes one 8th-note step of a strumming pattern on a chord.
-   */
   triggerStroke(midis, stroke, stepIdx, eighthSec) {
     if (!midis.length || stroke === '-') return;
     if (stroke === 'D') {
-      this.playChord(midis, { direction: 'down', strumMs: 22, duration: Math.max(0.55, eighthSec * 2.2) });
+      this.playChord(midis, { direction: 'down', strumMs: 22, duration: Math.max(0.6, eighthSec * 2.3) });
     } else if (stroke === 'U') {
-      this.playChord(midis.slice(-4), { direction: 'up', strumMs: 16, duration: Math.max(0.45, eighthSec * 1.8) });
+      this.playChord(midis.slice(-4), { direction: 'up', strumMs: 16, duration: Math.max(0.48, eighthSec * 1.9) });
     } else if (stroke === 'PM') {
       const chunk = stepIdx % 4 === 0 ? midis : midis.slice(0, Math.min(4, midis.length));
-      this.playChord(chunk, { direction: 'down', strumMs: 12, duration: 0.22, palmMute: true });
+      this.playChord(chunk, { direction: 'down', strumMs: 12, duration: 0.24, palmMute: true });
     } else if (stroke === 'ARP') {
       const seq = [...midis, ...midis.slice(1, -1).reverse()];
       const target = seq[stepIdx % seq.length];
-      this.playNote(target, Math.max(0.65, eighthSec * 2.8), 0, stepIdx === 0 ? 0.9 : 0.78);
+      this.playNote(target, Math.max(0.7, eighthSec * 2.9), 0, stepIdx === 0 ? 0.9 : 0.78);
     } else if (stroke === 'X') {
       this.playPercussiveMute();
     }
   }
 
-  /**
-   * Schedules an 8-step (4-beat, 8th-note) custom or preset cadence bar for a chord.
-   */
   scheduleChordBar(midis, { bpm = 104, cadence = this.chordCadence, customSteps = null, baseDelayMs = 0, sessionId = this.playbackSessionId, onBeatStep = null } = {}) {
     const valid = midis.filter((m) => m !== null && m !== undefined);
     if (!valid.length) return;
@@ -342,9 +794,7 @@ class GuitarAudioEngine {
       seq = midis.slice().reverse();
     } else if (cadence === 'alternate_thirds' && midis.length >= 3) {
       seq = [];
-      for (let i = 0; i < midis.length - 2; i++) {
-        seq.push(midis[i], midis[i + 2]);
-      }
+      for (let i = 0; i < midis.length - 2; i++) seq.push(midis[i], midis[i + 2]);
       seq.push(midis[midis.length - 1]);
     }
 
@@ -357,7 +807,7 @@ class GuitarAudioEngine {
       seq.forEach((midi, idx) => {
         const t = setTimeout(() => {
           if (sessionId !== this.playbackSessionId) return;
-          this.playNote(midi, Math.max(0.42, (stepMs / 1000) * (legato ? 2.2 : 1.7)), 0, 0.85, { palmMute, legato });
+          this.playNote(midi, Math.max(0.45, (stepMs / 1000) * (legato ? 2.2 : 1.7)), 0, 0.85, { palmMute, legato });
           if (onStep) onStep(midi, idx);
         }, idx * stepMs);
         this.activeTimers.push(t);
@@ -375,10 +825,6 @@ class GuitarAudioEngine {
     runPass();
   }
 
-  /**
-   * Plays a progression where each chord can have its OWN custom 8-step cadence array and BPM!
-   * chordItems: array of { midis: number[], customSteps?: string[], cadence?: string } OR plain number[][]
-   */
   playProgression(chordItems, { bpm = 104, cadence = this.chordCadence, loop = false, onChord = null, onBeatStep = null, onEnd = null } = {}) {
     this.stopSequence();
     if (!chordItems || !chordItems.length) return;

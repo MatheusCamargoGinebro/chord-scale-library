@@ -102,12 +102,7 @@
           </div>
           <div class="topbar-control">
             <label for="global-tone" class="topbar-label">Timbre</label>
-            <select id="global-tone" class="select-control select-sm" aria-label="Selecionar timbre da guitarra">
-              <option value="acoustic">Violão Aço</option>
-              <option value="clean">Guitarra Clean</option>
-              <option value="jazz">Jazz Hollow</option>
-              <option value="overdrive">Rock Crunch</option>
-            </select>
+            <select id="global-tone" class="select-control select-sm" aria-label="Selecionar timbre do instrumento"></select>
           </div>
           <span id="offline-badge" class="badge badge-gold" hidden>Offline</span>
         </div>
@@ -157,6 +152,7 @@
         </div>
         <div class="studio-controls">
           <button id="studio-metro-btn" class="btn btn-ghost btn-sm"></button>
+          <select id="studio-metro-rhythm" class="select-control select-xs" aria-label="Ritmo do metrônomo" title="Ritmo / Compasso do Metrônomo"></select>
           <button id="studio-drum-btn" class="btn btn-ghost btn-sm"></button>
           <button id="studio-stop-btn" class="btn btn-ghost btn-sm"></button>
           <div class="bpm-box">
@@ -164,7 +160,7 @@
             <span id="studio-bpm-val" class="mono-text">104 BPM</span>
           </div>
           <button id="studio-tap-btn" class="btn btn-secondary btn-xs">Tap Tempo</button>
-          <select id="studio-drum-preset" class="select-control select-xs" aria-label="Ritmo da bateria"></select>
+          <select id="studio-drum-preset" class="select-control select-xs" aria-label="Ritmo da bateria" title="Ritmo da Bateria"></select>
           <button id="btn-close-studio" class="btn btn-ghost btn-icon-sm" aria-label="Fechar painel"></button>
         </div>
       </div>
@@ -175,6 +171,6 @@
   <!-- Toast Notification Host -->
   <div id="toast-host" class="toast-host" aria-live="polite"></div>
 
-  <script type="module" src="./js/app.js?v=6"></script>
+  <script type="module" src="./js/app.js?v=8"></script>
 </body>
 </html>

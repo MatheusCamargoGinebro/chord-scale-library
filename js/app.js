@@ -7,8 +7,8 @@
 import { Theory } from './core/theory.js';
 import { ChordEngine } from './core/chordEngine.js';
 import { Storage } from './core/storage.js';
-import { AudioEngine } from './audio/audioEngine.js';
-import { RhythmEngine, DRUM_PRESETS } from './audio/rhythmEngine.js';
+import { AudioEngine, TONE_PRESETS } from './audio/audioEngine.js';
+import { RhythmEngine, DRUM_PRESETS, METRONOME_RHYTHMS } from './audio/rhythmEngine.js';
 import { ExportTools } from './ui/exportTools.js';
 import { icon } from './ui/icons.js';
 import { GlobalSearch } from './ui/globalSearch.js';
@@ -53,6 +53,7 @@ const App = {
     Theory.leftHanded = Boolean(prefs.leftHanded);
     AudioEngine.setTone(prefs.guitarTone || 'acoustic');
     RhythmEngine.setBpm(prefs.bpm || 104);
+    if (prefs.metroRhythm) RhythmEngine.setMetronomeRhythm(prefs.metroRhythm);
 
     this.populateHeaderControls();
     this.syncLeftHandedBtn();
@@ -135,7 +136,16 @@ const App = {
         .join('');
     }
     const toneSel = document.getElementById('global-tone');
-    if (toneSel) toneSel.value = AudioEngine.tone;
+    if (toneSel) {
+      const groups = [...new Set(TONE_PRESETS.map((t) => t.group))];
+      toneSel.innerHTML = groups.map((grp) => `
+        <optgroup label="${grp}">
+          ${TONE_PRESETS.filter((t) => t.group === grp).map((t) => `
+            <option value="${t.id}" ${t.id === AudioEngine.tone ? 'selected' : ''}>${t.name}</option>
+          `).join('')}
+        </optgroup>
+      `).join('');
+    }
   },
 
   toggleMobileMenu(force = null) {
@@ -180,9 +190,8 @@ const App = {
     document.getElementById('global-tone')?.addEventListener('change', (e) => {
       AudioEngine.setTone(e.target.value);
       Storage.savePrefs({ guitarTone: e.target.value });
-      AudioEngine.playNote(52, 0.7);
-      AudioEngine.playNote(59, 0.7, 0.08);
-      AudioEngine.playNote(64, 0.9, 0.16);
+      // Audition a warm Em9-style harmonic strum so the user immediately hears the new timbre!
+      AudioEngine.playChord([40, 47, 52, 55, 59, 66], { strumMs: 42, duration: 1.9 });
     });
 
     document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
@@ -219,6 +228,7 @@ const App = {
 
   initStudioDock() {
     const metroBtn = document.getElementById('studio-metro-btn');
+    const metroRhythmSel = document.getElementById('studio-metro-rhythm');
     const drumBtn = document.getElementById('studio-drum-btn');
     const stopBtn = document.getElementById('studio-stop-btn');
     const bpmRange = document.getElementById('studio-bpm-range');
@@ -228,11 +238,26 @@ const App = {
     const gridEl = document.getElementById('drum-sequencer-grid');
     const ledsEl = document.getElementById('beat-leds');
 
+    if (metroRhythmSel) {
+      metroRhythmSel.innerHTML = METRONOME_RHYTHMS
+        .map((r) => `<option value="${r.id}" ${r.id === RhythmEngine.metroRhythmId ? 'selected' : ''}>${r.name}</option>`)
+        .join('');
+    }
+
     if (presetSel) {
       presetSel.innerHTML = Object.entries(DRUM_PRESETS)
         .map(([k, v]) => `<option value="${k}">${v.name} (${v.bpm} BPM)</option>`)
         .join('');
     }
+
+    const renderBeatLeds = () => {
+      if (!ledsEl) return;
+      const r = RhythmEngine.getMetronomeRhythm();
+      ledsEl.innerHTML = Array.from({ length: r.beats }, (_, idx) => {
+        const isAccent = r.accents.includes(idx);
+        return `<span class="beat-led ${isAccent ? 'accent' : ''}" title="Tempo ${idx + 1}"></span>`;
+      }).join('');
+    };
 
     const renderGrid = () => {
       if (!gridEl) return;
@@ -259,14 +284,22 @@ const App = {
     const syncUi = () => {
       if (bpmRange) bpmRange.value = RhythmEngine.bpm;
       if (bpmVal) bpmVal.textContent = `${RhythmEngine.bpm} BPM`;
+      if (metroRhythmSel) metroRhythmSel.value = RhythmEngine.metroRhythmId;
       metroBtn?.classList.toggle('btn-gold-active', RhythmEngine.metronomeOn);
       drumBtn?.classList.toggle('btn-accent-active', RhythmEngine.drumsOn);
     };
 
+    renderBeatLeds();
     renderGrid();
     syncUi();
 
     metroBtn?.addEventListener('click', () => { RhythmEngine.toggleMetronome(); syncUi(); });
+    metroRhythmSel?.addEventListener('change', (e) => {
+      RhythmEngine.setMetronomeRhythm(e.target.value);
+      Storage.savePrefs({ metroRhythm: e.target.value });
+      renderBeatLeds();
+      syncUi();
+    });
     drumBtn?.addEventListener('click', () => { RhythmEngine.toggleDrums(); syncUi(); });
     stopBtn?.addEventListener('click', () => { RhythmEngine.stop(); AudioEngine.stopSequence(); syncUi(); });
 
@@ -290,9 +323,12 @@ const App = {
     });
 
     RhythmEngine.subscribe((type, payload) => {
+      if (type === 'metroBeat' && ledsEl) {
+        ledsEl.querySelectorAll('.beat-led').forEach((led, idx) => led.classList.toggle('lit', idx === payload));
+      }
       if (type === 'step') {
         const step = payload;
-        if (ledsEl) {
+        if (!RhythmEngine.metronomeOn && ledsEl) {
           const activeBeat = step >= 0 ? Math.floor(step / 4) : -1;
           ledsEl.querySelectorAll('.beat-led').forEach((led, idx) => led.classList.toggle('lit', idx === activeBeat));
         }

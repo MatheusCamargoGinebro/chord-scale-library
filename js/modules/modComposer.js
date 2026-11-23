@@ -1,11 +1,11 @@
 /**
  * Module 10: Song Composer (Compositor)
- * - Prominent Chord Name + Large Interactive Shape Diagram on every chord card (easy to play!)
- * - Individual per-chord shape stepper (< Shape X/Y >) persisted with song
- * - Momentary per-chord Custom Cadence Editor (Down, Up, Palm Mute, Arpeggio, Mute, Rest) + "Replicar para todos" + Momentary BPM (never persisted!)
- * - Synchronized real-time chord + beat (1-2-3-4) highlight during playback
- * - HTML5 Drag-and-Drop reordering for chords inside sections
- * - Stage / Focus Mode fullscreen rehearsal view
+ * - Per-section repeat counter (1x..16x) respected during playback & PDF export
+ * - Inline section summary next to section name: chord names in order (e.g. "Verso · 2x · C A F# D") + cadence arrows when uniform
+ * - Prominent Chord Name + Large Interactive Shape Diagram on every chord card
+ * - Individual per-chord shape stepper (< Shape X/Y >) + Momentary per-chord Custom Cadence Editor
+ * - Synchronized real-time chord + beat + active cadence step highlight in both Normal & Horizontal Stage Mode
+ * - HTML5 Drag-and-Drop reordering for chords
  */
 
 import { Theory } from '../core/theory.js';
@@ -17,7 +17,13 @@ import { renderVerticalChordSVG } from '../ui/chordDiagram.js';
 import { ExportTools } from '../ui/exportTools.js';
 import { icon } from '../ui/icons.js';
 import { renderPlaybackControlsHTML, bindPlaybackControls, highlightStrumStep } from '../ui/playbackBar.js';
-import { renderChordCadenceEditorHTML, renderStrumStripHTML, cycleStroke } from '../ui/strummingEditor.js';
+import {
+  renderChordCadenceEditorHTML,
+  renderStrumStripHTML,
+  renderInlineCadenceIconsHTML,
+  renderStageCadenceBoxHTML,
+  cycleStroke,
+} from '../ui/strummingEditor.js';
 
 const SECTION_TYPES = ['Verso', 'Pré-Refrão', 'Refrão', 'Solo', 'Ponte', 'Intro', 'Outro'];
 
@@ -29,6 +35,7 @@ export const ModComposer = {
     isPlaying: false,
     playingSectionId: null,
     activeChordKey: null, // "sIdx:cIdx"
+    activeRepInfo: null, // { secId, rep, totalReps }
     activeBeat: -1,
     activeStep: -1,
     stageMode: false,
@@ -69,6 +76,7 @@ export const ModComposer = {
         song.sections.push({
           id: `sec_${Date.now()}`,
           type: 'Refrão',
+          repeats: 2,
           scaleId: 'major',
           scaleRootPc: opts.importProg.keyPc,
           chords: opts.importProg.chords,
@@ -87,20 +95,80 @@ export const ModComposer = {
     return this.state.momentaryCadenceId ?? AudioEngine.chordCadence;
   },
 
+  getSectionRepeats(sec) {
+    return Math.max(1, Math.min(16, Number(sec.repeats) || 1));
+  },
+
   getStepsForComposerChord(secId, cIdx) {
     return this.state.momentaryChordSteps[`${secId}:${cIdx}`] || getPresetSteps(this.getEffectiveCadenceId());
+  },
+
+  /**
+   * Returns the shared 8-step array if ALL chords in a section share the exact same cadence; otherwise null.
+   */
+  getUniformSectionSteps(sec) {
+    if (!sec.chords.length) return null;
+    const first = this.getStepsForComposerChord(sec.id, 0);
+    const sig = first.join(',');
+    for (let i = 1; i < sec.chords.length; i++) {
+      if (this.getStepsForComposerChord(sec.id, i).join(',') !== sig) return null;
+    }
+    return first;
+  },
+
+  /**
+   * Renders the compact inline chord summary + uniform cadence icons right beside the section name:
+   * e.g.  [Verso] [2x]  C  A  F#  D  [↓ · ↓ ↑ · ↑ ↓ ↑]
+   */
+  renderSectionSummaryHTML(sec, sIdx) {
+    if (!sec.chords.length) return '<span class="muted-text small">Sem acordes</span>';
+    const chordNamesHtml = sec.chords
+      .map((ch, cIdx) => {
+        const nm = Theory.getChordDisplayName(ch.rootPc, ch.type);
+        const key = `${sIdx}:${cIdx}`;
+        const isNow = this.state.activeChordKey === key;
+        return `<span class="summary-chord-tag ${isNow ? 'playing' : ''}" data-sum-key="${key}">${nm}</span>`;
+      })
+      .join('');
+
+    const uniformSteps = this.getUniformSectionSteps(sec);
+    const cadenceHtml = uniformSteps
+      ? renderInlineCadenceIconsHTML(uniformSteps)
+      : `<span class="badge badge-muted" style="font-size:10.5px;">Cadência mista</span>`;
+
+    return `
+      <div class="sec-summary-strip">
+        <div class="summary-chords-seq">${chordNamesHtml}</div>
+        ${cadenceHtml}
+      </div>
+    `;
   },
 
   getChordShape(ch, tuning) {
     const pool = ChordEngine.getVoicings(ch.rootPc, ch.type, tuning);
     if (!pool.length) {
-      // Safe fallback to triad if exotic voicing unavailable in special tuning
       const fallback = ChordEngine.getVoicings(ch.rootPc, ch.type.startsWith('m') ? 'min' : 'maj', tuning);
       return { voicing: fallback[0] || null, pool: fallback, safeIdx: 0 };
     }
     const idx = Number.isInteger(ch.shapeIdx) ? ch.shapeIdx : 0;
     const safeIdx = ((idx % pool.length) + pool.length) % pool.length;
     return { voicing: pool[safeIdx], pool, safeIdx };
+  },
+
+  /**
+   * Builds expanded playback entries respecting each section's repeat count!
+   */
+  buildEntriesForSections(sectionsList) {
+    const entries = [];
+    sectionsList.forEach(({ sec, sIdx }) => {
+      const reps = this.getSectionRepeats(sec);
+      for (let r = 1; r <= reps; r++) {
+        sec.chords.forEach((chord, cIdx) => {
+          entries.push({ sIdx, cIdx, secId: sec.id, chord, rep: r, totalReps: reps });
+        });
+      }
+    });
+    return entries;
   },
 
   playTimeline(container, song, entries, playingSectionId = null) {
@@ -135,21 +203,34 @@ export const ModComposer = {
       onChord: (flatIdx) => {
         const entry = entries[flatIdx];
         if (!entry) return;
-        this.state.activeChordKey = `${entry.sIdx}:${entry.cIdx}`;
+        const chKey = `${entry.sIdx}:${entry.cIdx}`;
+        this.state.activeChordKey = chKey;
         this.state.playingSectionId = entry.secId;
+        this.state.activeRepInfo = { secId: entry.secId, rep: entry.rep, totalReps: entry.totalReps };
 
         container.querySelectorAll('.composer-chord-card, .stage-chord-card').forEach((el) => {
-          const isNow = el.dataset.chKey === this.state.activeChordKey;
+          const isNow = el.dataset.chKey === chKey;
           el.classList.toggle('playing', isNow);
           if (isNow && this.state.stageMode) {
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
           }
         });
+        container.querySelectorAll('.summary-chord-tag').forEach((el) => {
+          el.classList.toggle('playing', el.dataset.sumKey === chKey);
+        });
         container.querySelectorAll('.composer-sec-card').forEach((secEl) => {
           secEl.classList.toggle('playing-section', secEl.dataset.secId === entry.secId);
         });
+        // Update live repeat indicator in Stage Mode & section header
+        container.querySelectorAll('[data-rep-status]').forEach((el) => {
+          if (el.dataset.repStatus === entry.secId && entry.totalReps > 1) {
+            el.textContent = `Rep ${entry.rep}/${entry.totalReps}`;
+            el.hidden = false;
+          } else {
+            el.hidden = true;
+          }
+        });
 
-        // Update top visual strum strip to match the currently playing chord's cadence
         const strip = container.querySelector('#comp-pb-strum-strip');
         if (strip && strip.parentElement) {
           strip.parentElement.innerHTML = `<span class="pb-label" style="min-width:68px;">Levada</span>${renderStrumStripHTML(this.getStepsForComposerChord(entry.secId, entry.cIdx), { activeStep: 0, stripId: 'comp-pb-strum-strip' })}`;
@@ -160,8 +241,20 @@ export const ModComposer = {
         this.state.activeBeat = beatIdx;
         highlightStrumStep(container, 'comp-pb', stepIdx);
         container.querySelectorAll('.beat-dot').forEach((d, bi) => d.classList.toggle('on', bi === beatIdx));
+
         const entry = entries[flatIdx];
-        if (entry && this.state.editingKey && this.state.editingKey.secId === entry.secId && this.state.editingKey.cIdx === entry.cIdx) {
+        if (!entry) return;
+        const chKey = `${entry.sIdx}:${entry.cIdx}`;
+
+        // Live-highlight exact cadence step right under the active chord in Stage Mode!
+        container.querySelectorAll('.stage-cadence-box').forEach((box) => {
+          const isTarget = box.dataset.stageCadKey === chKey;
+          box.querySelectorAll('.mini-strum-cell').forEach((cell) => {
+            cell.classList.toggle('is-now', isTarget && Number(cell.dataset.msStep) === stepIdx);
+          });
+        });
+
+        if (this.state.editingKey && this.state.editingKey.secId === entry.secId && this.state.editingKey.cIdx === entry.cIdx) {
           container.querySelectorAll('.strum-edit-btn').forEach((b) => b.classList.toggle('is-now', Number(b.dataset.ceStep) === stepIdx));
         }
       },
@@ -176,12 +269,15 @@ export const ModComposer = {
     this.state.isPlaying = false;
     this.state.playingSectionId = null;
     this.state.activeChordKey = null;
+    this.state.activeRepInfo = null;
     this.state.activeBeat = -1;
     this.state.activeStep = -1;
     if (container) {
-      container.querySelectorAll('.composer-chord-card, .stage-chord-card').forEach((el) => el.classList.remove('playing'));
+      container.querySelectorAll('.composer-chord-card, .stage-chord-card, .summary-chord-tag').forEach((el) => el.classList.remove('playing'));
       container.querySelectorAll('.composer-sec-card').forEach((el) => el.classList.remove('playing-section'));
       container.querySelectorAll('.beat-dot').forEach((d) => d.classList.remove('on'));
+      container.querySelectorAll('.mini-strum-cell').forEach((c) => c.classList.remove('is-now'));
+      container.querySelectorAll('[data-rep-status]').forEach((el) => { el.hidden = true; });
       highlightStrumStep(container, 'comp-pb', -1);
       const b = container.querySelector('#comp-play-song');
       if (b) b.innerHTML = `${icon('play', 14)}<span>Tocar Música</span>`;
@@ -202,7 +298,7 @@ export const ModComposer = {
       <div class="module-header">
         <div>
           <h2 class="module-title">Compositor de Músicas</h2>
-          <p class="module-subtitle">Cada acorde exibe o nome e o shape pronto para tocar. Arraste acordes para reordenar, customize batidas momentâneas ou use o Modo Palco.</p>
+          <p class="module-subtitle">Defina repetições por trecho, visualize o resumo das notas e shapes, edite batidas momentâneas e ensaie no Modo Palco.</p>
         </div>
         <div class="action-bar stable-actions">
           <button id="comp-play-song" class="btn btn-primary btn-play-toggle">${icon(this.state.isPlaying ? 'stop' : 'play', 14)}<span>${this.state.isPlaying ? 'Parar' : 'Tocar Música'}</span></button>
@@ -254,34 +350,49 @@ export const ModComposer = {
         </div>
       </section>
 
-      <!-- Sections with Clear Visual Shape Cards + Drag-and-Drop -->
+      <!-- Sections with Summary Strip, Repeats, Visual Shape Cards & Drag-and-Drop -->
       <div class="composer-sections">
         ${song.sections.map((sec, sIdx) => {
           const sc = Theory.getScale(sec.scaleId);
           const scRootName = Theory.pcToNote(sec.scaleRootPc, Theory.useFlatsForRoot(sec.scaleRootPc));
+          const reps = this.getSectionRepeats(sec);
           const isEditingThisSec = this.state.editingKey && this.state.editingKey.secId === sec.id && this.state.editingKey.cIdx < sec.chords.length;
 
           return `
             <section class="card composer-sec-card ${this.state.playingSectionId === sec.id ? 'playing-section' : ''}" data-sec-id="${sec.id}">
-              <div class="sec-header">
-                <div class="sec-title-group">
+              <!-- Top Section Summary Line: [Verso] [2x] [C A F# D] [↓ · ↓ ↑ ...] -->
+              <div class="sec-top-summary-bar">
+                <div class="sec-summary-left">
                   <span class="sec-badge">${sec.type}</span>
-                  <select class="select-control select-xs sec-type-sel" data-sidx="${sIdx}">
-                    ${SECTION_TYPES.map((t) => `<option value="${t}" ${t === sec.type ? 'selected' : ''}>${t}</option>`).join('')}
-                  </select>
-                  <span class="muted-text small">Escala:</span>
-                  <select class="select-control select-xs sec-scale-root" data-sidx="${sIdx}">
-                    ${Theory.getAllRoots().map((r) => `<option value="${r.pc}" ${r.pc === sec.scaleRootPc ? 'selected' : ''}>${r.short || r.label}</option>`).join('')}
-                  </select>
-                  <select class="select-control select-xs sec-scale-id" data-sidx="${sIdx}">
-                    ${Theory.getScales().map((s) => `<option value="${s.id}" ${s.id === sec.scaleId ? 'selected' : ''}>${s.name}</option>`).join('')}
-                  </select>
-                  <button class="btn btn-ghost btn-xs sec-open-scale" data-r="${sec.scaleRootPc}" data-sc="${sec.scaleId}">Ver Escala ${icon('arrowRight', 12)}</button>
+                  <div class="sec-repeat-control" title="Quantas vezes este trecho se repete">
+                    ${icon('repeat', 12)}
+                    <input type="number" class="sec-repeat-input mono-text" data-sidx="${sIdx}" min="1" max="16" value="${reps}" aria-label="Repetições de ${sec.type}">
+                    <span>×</span>
+                  </div>
+                  <span class="badge badge-gold" data-rep-status="${sec.id}" ${this.state.activeRepInfo?.secId === sec.id && reps > 1 ? '' : 'hidden'}>
+                    ${this.state.activeRepInfo?.secId === sec.id ? `Rep ${this.state.activeRepInfo.rep}/${this.state.activeRepInfo.totalReps}` : ''}
+                  </span>
+                  ${this.renderSectionSummaryHTML(sec, sIdx)}
                 </div>
                 <div class="action-bar">
-                  <button class="btn btn-primary btn-xs sec-play" data-sidx="${sIdx}">${icon('play', 12)} Tocar ${sec.type}</button>
-                  <button class="btn btn-ghost btn-xs text-red sec-del" data-sidx="${sIdx}" aria-label="Remover sessão">${icon('trash', 13)}</button>
+                  <button class="btn btn-primary btn-xs sec-play" data-sidx="${sIdx}">${icon('play', 12)} Tocar (${reps}×)</button>
+                  <button class="btn btn-ghost btn-icon-xs text-red sec-del" data-sidx="${sIdx}" aria-label="Remover sessão">${icon('trash', 13)}</button>
                 </div>
+              </div>
+
+              <!-- Section Settings Row (Type + Improvisation Scale) -->
+              <div class="sec-meta-row">
+                <select class="select-control select-xs sec-type-sel" data-sidx="${sIdx}" aria-label="Tipo de sessão">
+                  ${SECTION_TYPES.map((t) => `<option value="${t}" ${t === sec.type ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+                <span class="muted-text small">Escala sugerida:</span>
+                <select class="select-control select-xs sec-scale-root" data-sidx="${sIdx}">
+                  ${Theory.getAllRoots().map((r) => `<option value="${r.pc}" ${r.pc === sec.scaleRootPc ? 'selected' : ''}>${r.short || r.label}</option>`).join('')}
+                </select>
+                <select class="select-control select-xs sec-scale-id" data-sidx="${sIdx}">
+                  ${Theory.getScales().map((s) => `<option value="${s.id}" ${s.id === sec.scaleId ? 'selected' : ''}>${s.name}</option>`).join('')}
+                </select>
+                <button class="btn btn-ghost btn-xs sec-open-scale" data-r="${sec.scaleRootPc}" data-sc="${sec.scaleId}">Ver Escala ${icon('arrowRight', 12)}</button>
               </div>
 
               <!-- Visual Chord Name + Shape Diagram Cards (Draggable!) -->
@@ -325,7 +436,7 @@ export const ModComposer = {
                 ${sec.chords.length === 0 ? '<div class="muted-text small" style="padding:14px;">Adicione acordes ou insira uma progressão pronta abaixo.</div>' : ''}
               </div>
 
-              <!-- Momentary Per-Chord Cadence Editor inside this section -->
+              <!-- Momentary Per-Chord Cadence Editor -->
               ${isEditingThisSec ? (() => {
                 const cIdx = this.state.editingKey.cIdx;
                 const ch = sec.chords[cIdx];
@@ -335,7 +446,8 @@ export const ModComposer = {
                   steps: this.getStepsForComposerChord(sec.id, cIdx),
                   bpm: effBpm,
                   activeStep: this.state.activeChordKey === `${sIdx}:${cIdx}` ? this.state.activeStep : -1,
-                  canReplicate: true,
+                  canReplicate: sec.chords.length > 1,
+                  replicateLabel: `Replicar em ${sec.type}`,
                   editorId: `comp-cadence-editor-${sIdx}`,
                 });
               })() : ''}
@@ -367,7 +479,7 @@ export const ModComposer = {
         }).join('')}
       </div>
 
-      <!-- Stage / Focus Mode Overlay for Composer -->
+      <!-- Horizontal Stage / Focus Mode Overlay with Live Per-Chord Cadence Step -->
       ${this.state.stageMode ? `
         <div class="stage-overlay" role="dialog" aria-modal="true" aria-label="Modo Palco — ${song.title}">
           <div class="stage-header">
@@ -388,25 +500,38 @@ export const ModComposer = {
           </div>
 
           <div class="stage-sections-wrap">
-            ${song.sections.map((sec, sIdx) => `
-              <div class="stage-section-block">
-                <div class="stage-sec-title"><span class="sec-badge">${sec.type}</span> <span class="muted-text small">${sec.notes || ''}</span></div>
-                <div class="stage-chords-grid">
-                  ${sec.chords.map((ch, cIdx) => {
-                    const name = Theory.getChordDisplayName(ch.rootPc, ch.type);
-                    const { voicing } = this.getChordShape(ch, tuning);
-                    const chKey = `${sIdx}:${cIdx}`;
-                    return `
-                      <div class="stage-chord-card ${this.state.activeChordKey === chKey ? 'playing' : ''}" data-ch-key="${chKey}">
-                        <div class="stage-chord-head"><strong>${name}</strong><span class="badge badge-muted">${ch.beats}t</span></div>
-                        ${voicing ? renderVerticalChordSVG(voicing, { compact: false }) : ''}
-                        <div class="small muted-text">${voicing?.label || ''}</div>
-                      </div>
-                    `;
-                  }).join('')}
+            ${song.sections.map((sec, sIdx) => {
+              const reps = this.getSectionRepeats(sec);
+              return `
+                <div class="stage-section-block">
+                  <div class="stage-sec-title">
+                    <span class="sec-badge">${sec.type}</span>
+                    <span class="badge badge-info">${reps}×</span>
+                    <span class="badge badge-gold" data-rep-status="${sec.id}" ${this.state.activeRepInfo?.secId === sec.id && reps > 1 ? '' : 'hidden'}>
+                      ${this.state.activeRepInfo?.secId === sec.id ? `Rep ${this.state.activeRepInfo.rep}/${this.state.activeRepInfo.totalReps}` : ''}
+                    </span>
+                    ${this.renderSectionSummaryHTML(sec, sIdx)}
+                  </div>
+                  <div class="stage-chords-grid">
+                    ${sec.chords.map((ch, cIdx) => {
+                      const name = Theory.getChordDisplayName(ch.rootPc, ch.type);
+                      const { voicing } = this.getChordShape(ch, tuning);
+                      const chKey = `${sIdx}:${cIdx}`;
+                      const steps = this.getStepsForComposerChord(sec.id, cIdx);
+                      const activeStep = this.state.activeChordKey === chKey ? this.state.activeStep : -1;
+                      return `
+                        <div class="stage-chord-card ${this.state.activeChordKey === chKey ? 'playing' : ''}" data-ch-key="${chKey}">
+                          <div class="stage-chord-head"><strong>${name}</strong><span class="badge badge-muted">${ch.beats}t</span></div>
+                          ${voicing ? renderVerticalChordSVG(voicing, { compact: false }) : ''}
+                          <div class="small muted-text" style="margin-bottom:6px;">${voicing?.label || ''}</div>
+                          ${renderStageCadenceBoxHTML(steps, { activeStep, cardKey: chKey })}
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
                 </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       ` : ''}
@@ -420,11 +545,10 @@ export const ModComposer = {
       mode: 'chord',
       idPrefix: 'comp-pb',
       momentaryOnly: true,
-      onBpmChange: (bpm) => {
-        this.state.momentaryBpm = bpm;
-      },
+      onBpmChange: (bpm) => { this.state.momentaryBpm = bpm; },
       onCadenceChange: (cadId) => {
         this.state.momentaryCadenceId = cadId;
+        this.render(container, app);
       },
     });
 
@@ -464,8 +588,8 @@ export const ModComposer = {
         bpm: RhythmEngine.bpm || 110,
         updatedAt: Date.now(),
         sections: [
-          { id: `sec_${Date.now()}_1`, type: 'Verso', scaleId: 'major', scaleRootPc: 0, chords: [{ rootPc: 0, type: 'maj', beats: 4, shapeIdx: 0 }, { rootPc: 7, type: 'maj', beats: 4, shapeIdx: 0 }], notes: '' },
-          { id: `sec_${Date.now()}_2`, type: 'Refrão', scaleId: 'pentatonic_major', scaleRootPc: 0, chords: [{ rootPc: 5, type: 'maj', beats: 4, shapeIdx: 0 }, { rootPc: 7, type: 'maj', beats: 4, shapeIdx: 0 }], notes: '' },
+          { id: `sec_${Date.now()}_1`, type: 'Verso', repeats: 2, scaleId: 'major', scaleRootPc: 0, chords: [{ rootPc: 0, type: 'maj', beats: 4, shapeIdx: 0 }, { rootPc: 7, type: 'maj', beats: 4, shapeIdx: 0 }], notes: '' },
+          { id: `sec_${Date.now()}_2`, type: 'Refrão', repeats: 2, scaleId: 'pentatonic_major', scaleRootPc: 0, chords: [{ rootPc: 5, type: 'maj', beats: 4, shapeIdx: 0 }, { rootPc: 7, type: 'maj', beats: 4, shapeIdx: 0 }], notes: '' },
         ],
       };
       this.state.songs.unshift(newSong);
@@ -490,11 +614,23 @@ export const ModComposer = {
         song.sections.push({
           id: `sec_${Date.now()}`,
           type: btn.dataset.addSec,
+          repeats: 1,
           scaleId: 'major',
           scaleRootPc: song.keyPc,
           chords: [],
           notes: '',
         });
+        this.save();
+        this.render(container, app);
+      });
+    });
+
+    // Repeat count input per section
+    container.querySelectorAll('.sec-repeat-input').forEach((inp) => {
+      inp.addEventListener('change', (e) => {
+        const sIdx = Number(inp.dataset.sidx);
+        const val = Math.max(1, Math.min(16, Math.round(Number(e.target.value) || 1)));
+        song.sections[sIdx].repeats = val;
         this.save();
         this.render(container, app);
       });
@@ -553,7 +689,6 @@ export const ModComposer = {
       });
     });
 
-    // Per-chord shape switching
     container.querySelectorAll('.comp-sh-prev').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -580,7 +715,6 @@ export const ModComposer = {
       });
     });
 
-    // Click chord diagram to audition with its custom cadence
     container.querySelectorAll('.sec-chord-play').forEach((el) => {
       el.addEventListener('click', () => {
         const sIdx = Number(el.dataset.sidx);
@@ -598,7 +732,6 @@ export const ModComposer = {
       });
     });
 
-    // Toggle momentary per-chord cadence editor
     container.querySelectorAll('.comp-edit-cadence').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -614,7 +747,6 @@ export const ModComposer = {
       });
     });
 
-    // Bind active momentary cadence editor inside Composer
     if (this.state.editingKey) {
       const { sIdx, cIdx, secId } = this.state.editingKey;
       const editor = container.querySelector(`#comp-cadence-editor-${sIdx}`);
@@ -670,12 +802,13 @@ export const ModComposer = {
 
         editor.querySelector('.ce-replicate')?.addEventListener('click', () => {
           const src = this.getStepsForComposerChord(secId, cIdx).slice();
-          song.sections.forEach((sec) => {
-            sec.chords.forEach((_, idx) => {
-              this.state.momentaryChordSteps[`${sec.id}:${idx}`] = src.slice();
+          const currentSec = song.sections[sIdx];
+          if (currentSec) {
+            currentSec.chords.forEach((_, idx) => {
+              this.state.momentaryChordSteps[`${currentSec.id}:${idx}`] = src.slice();
             });
-          });
-          app.toast('Cadência replicada para todos os acordes da música!');
+            app.toast(`Cadência replicada para todos os acordes de ${currentSec.type}!`);
+          }
           this.render(container, app);
         });
 
@@ -686,7 +819,6 @@ export const ModComposer = {
       }
     }
 
-    // HTML5 Drag-and-Drop reordering for chord cards!
     container.querySelectorAll('.composer-chord-card').forEach((card) => {
       card.addEventListener('dragstart', (e) => {
         this.state.dragSource = { sIdx: Number(card.dataset.sidx), cIdx: Number(card.dataset.cidx) };
@@ -697,13 +829,8 @@ export const ModComposer = {
         card.classList.remove('dragging');
         container.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
       });
-      card.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        card.classList.add('drag-over');
-      });
-      card.addEventListener('dragleave', () => {
-        card.classList.remove('drag-over');
-      });
+      card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
       card.addEventListener('drop', (e) => {
         e.preventDefault();
         card.classList.remove('drag-over');
@@ -724,29 +851,24 @@ export const ModComposer = {
       inp.addEventListener('change', (e) => { song.sections[Number(inp.dataset.sidx)].notes = e.target.value; this.save(); });
     });
 
-    // Play Section
+    // Play Section (respecting repeat count!)
     container.querySelectorAll('.sec-play').forEach((btn) => {
       btn.addEventListener('click', () => {
         const sIdx = Number(btn.dataset.sidx);
         const sec = song.sections[sIdx];
         if (!sec.chords.length) return app.toast('Adicione acordes nesta sessão primeiro.');
-        const entries = sec.chords.map((chord, cIdx) => ({ sIdx, cIdx, secId: sec.id, chord }));
+        const entries = this.buildEntriesForSections([{ sec, sIdx }]);
         this.playTimeline(container, song, entries, sec.id);
       });
     });
 
-    // Play Full Song (or Stop)
+    // Play Full Song (respecting each section's repeat count!)
     const togglePlayFull = () => {
       if (this.state.isPlaying) {
         this.stopPlayback(container);
         return;
       }
-      const entries = [];
-      song.sections.forEach((sec, sIdx) => {
-        sec.chords.forEach((chord, cIdx) => {
-          entries.push({ sIdx, cIdx, secId: sec.id, chord });
-        });
-      });
+      const entries = this.buildEntriesForSections(song.sections.map((sec, sIdx) => ({ sec, sIdx })));
       if (!entries.length) return app.toast('Adicione acordes à música primeiro.');
       this.playTimeline(container, song, entries, null);
     };
@@ -767,13 +889,15 @@ export const ModComposer = {
       const body = song.sections.map((sec) => {
         const sc = Theory.getScale(sec.scaleId);
         const scRoot = Theory.pcToNote(sec.scaleRootPc, Theory.useFlatsForRoot(sec.scaleRootPc));
+        const reps = this.getSectionRepeats(sec);
+        const chordList = sec.chords.map((c) => Theory.getChordDisplayName(c.rootPc, c.type)).join('  ·  ');
         const diagrams = sec.chords.map((c) => {
           const { voicing } = this.getChordShape(c, tuning);
           return `<div style="display:inline-block;margin:6px;text-align:center;">${voicing ? renderVerticalChordSVG(voicing, { compact: true }) : `<strong>${Theory.getChordDisplayName(c.rootPc, c.type)}</strong>`}</div>`;
         }).join('');
         return `
           <div class="print-section">
-            <h3>[${sec.type}] — Escala: ${scRoot} ${sc.name}</h3>
+            <h3>[${sec.type} · ${reps}×] — ${chordList} <small style="color:#64748b;">(Escala: ${scRoot} ${sc.name})</small></h3>
             <div>${diagrams || '<em>Sem acordes</em>'}</div>
             ${sec.notes ? `<p style="color:#475569;font-size:13px;">${sec.notes}</p>` : ''}
           </div>

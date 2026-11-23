@@ -18,7 +18,7 @@ import { renderCircleOfFifths } from '../ui/circleOfFifths.js';
 import { ExportTools } from '../ui/exportTools.js';
 import { icon } from '../ui/icons.js';
 import { renderPlaybackControlsHTML, bindPlaybackControls, highlightStrumStep } from '../ui/playbackBar.js';
-import { renderChordCadenceEditorHTML, renderStrumStripHTML, cycleStroke } from '../ui/strummingEditor.js';
+import { renderChordCadenceEditorHTML, renderStrumStripHTML, renderStageCadenceBoxHTML, cycleStroke } from '../ui/strummingEditor.js';
 
 export const ModProgressions = {
   id: 'progressions',
@@ -148,9 +148,14 @@ export const ModProgressions = {
         this.state.activeStep = stepIdx;
         this.state.activeBeat = beatIdx;
         highlightStrumStep(container, 'prog-pb', stepIdx);
-        // Pulse beat dots in Stage Mode or card
         container.querySelectorAll('.beat-dot').forEach((d, bi) => d.classList.toggle('on', bi === beatIdx));
-        // Pulse active editor step if editing the currently playing chord
+        // Live-highlight exact cadence step under the playing chord in Stage Mode!
+        container.querySelectorAll('.stage-cadence-box').forEach((box) => {
+          const isTarget = box.dataset.stageCadKey === String(chordIdx);
+          box.querySelectorAll('.mini-strum-cell').forEach((cell) => {
+            cell.classList.toggle('is-now', isTarget && Number(cell.dataset.msStep) === stepIdx);
+          });
+        });
         if (this.state.editingCadenceIdx === chordIdx) {
           container.querySelectorAll('.strum-edit-btn').forEach((b) => {
             b.classList.toggle('is-now', Number(b.dataset.ceStep) === stepIdx);
@@ -180,6 +185,7 @@ export const ModProgressions = {
     this.state.activeStep = -1;
     if (container) {
       container.querySelectorAll('.prog-chord-card, .stage-chord-card').forEach((el) => el.classList.remove('playing'));
+      container.querySelectorAll('.mini-strum-cell').forEach((c) => c.classList.remove('is-now'));
       highlightStrumStep(container, 'prog-pb', -1);
       const b = container.querySelector('#prog-play');
       if (b) b.innerHTML = `${icon('play', 14)}<span>Tocar</span>`;
@@ -481,6 +487,8 @@ export const ModProgressions = {
               const cRoot = Theory.mod12(this.state.keyPc + ch.degree);
               const cName = Theory.getChordDisplayName(cRoot, ch.type);
               const sh = shapes[idx];
+              const steps = this.getStepsForChord(idx);
+              const activeStep = this.state.activeChordIdx === idx ? this.state.activeStep : -1;
               return `
                 <div class="stage-chord-card ${this.state.activeChordIdx === idx ? 'playing' : ''}" data-pchord-idx="${idx}">
                   <div class="stage-chord-head">
@@ -488,7 +496,8 @@ export const ModProgressions = {
                     <strong>${cName}</strong>
                   </div>
                   ${sh ? renderVerticalChordSVG(sh, { compact: false }) : ''}
-                  <div class="small muted-text">${sh?.label || ''}</div>
+                  <div class="small muted-text" style="margin-bottom:6px;">${sh?.label || ''}</div>
+                  ${renderStageCadenceBoxHTML(steps, { activeStep, cardKey: String(idx) })}
                 </div>
               `;
             }).join('')}

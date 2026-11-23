@@ -49,6 +49,10 @@
   --sidebar-w: 244px;
   --topbar-h: 62px;
   --transition: 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+
+  --scroll-track: #0c1220;
+  --scroll-thumb: #26344d;
+  --scroll-thumb-hover: #f59e0b;
 }
 
 [data-theme="light"] {
@@ -88,12 +92,44 @@
 
   --shadow-card: 0 4px 18px rgba(15, 23, 42, 0.06);
   --shadow-glow: 0 0 0 1px rgba(217, 119, 6, 0.48), 0 6px 18px rgba(217, 119, 6, 0.12);
+
+  --scroll-track: #e2e8f0;
+  --scroll-thumb: #94a3b8;
+  --scroll-thumb-hover: #d97706;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+/* Custom Sleek Scrollbars (Vertical & Horizontal) matching Dark & Light Themes */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scroll-track);
+  transition: background 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--scroll-track);
 }
 
 html, body {

@@ -26,6 +26,49 @@ export function cycleStroke(currentCode) {
 }
 
 /**
+ * Returns the preset label matching a step pattern, or "Customizada" if user-edited.
+ */
+export function getCadenceLabel(steps) {
+  const sig = (steps || []).join(',');
+  const match = CHORD_CADENCES.find((c) => c.steps.join(',') === sig);
+  return match ? match.label : 'Cadência Custom';
+}
+
+/**
+ * Inline compact icon-only cadence preview (shown next to section chord summary when uniform).
+ */
+export function renderInlineCadenceIconsHTML(steps) {
+  return `
+    <span class="inline-cadence-icons" title="Cadência do trecho: ${getCadenceLabel(steps)}">
+      ${steps.map((code, i) => `
+        <span class="ici-step ${code === '-' ? 'is-rest' : ''}" data-ic-step="${i}">${strokeDisplayHTML(code)}</span>
+      `).join('')}
+    </span>
+  `;
+}
+
+/**
+ * Stage Mode per-chord cadence box shown right below each chord diagram,
+ * displaying the cadence name and live-highlighted 8-step rhythm indicator.
+ */
+export function renderStageCadenceBoxHTML(steps, { activeStep = -1, cardKey = '' } = {}) {
+  const label = getCadenceLabel(steps);
+  return `
+    <div class="stage-cadence-box" data-stage-cad-key="${cardKey}">
+      <div class="stage-cad-label">${label}</div>
+      <div class="mini-strum-strip">
+        ${steps.map((code, i) => `
+          <div class="mini-strum-cell ${code === '-' ? 'is-rest' : ''} ${activeStep === i ? 'is-now' : ''}" data-ms-step="${i}">
+            <span class="mini-beat">${BEAT_LABELS[i]}</span>
+            ${strokeDisplayHTML(code)}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Compact read-only visual strumming strip (for inline playback bars & chord cards).
  */
 export function renderStrumStripHTML(steps, { activeStep = -1, stripId = '' } = {}) {
@@ -50,6 +93,7 @@ export function renderChordCadenceEditorHTML({
   bpm,
   activeStep = -1,
   canReplicate = true,
+  replicateLabel = 'Replicar para todos',
   editorId = 'cadence-editor',
 }) {
   return `
@@ -60,7 +104,7 @@ export function renderChordCadenceEditorHTML({
           <span class="badge badge-muted" style="margin-left:6px;">Alteração momentânea (não salva)</span>
         </div>
         <div class="action-bar">
-          ${canReplicate ? `<button type="button" class="btn btn-secondary btn-xs ce-replicate">${icon('copy', 12)} Replicar para todos</button>` : ''}
+          ${canReplicate ? `<button type="button" class="btn btn-secondary btn-xs ce-replicate">${icon('copy', 12)} ${replicateLabel}</button>` : ''}
           <button type="button" class="btn btn-ghost btn-xs ce-close">${icon('close', 12)} Fechar</button>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { Theory } from '../core/theory.js';
 import { ChordEngine } from '../core/chordEngine.js';
 import { HarmonyAI } from '../core/harmonyAI.js';
 import { Storage } from '../core/storage.js';
-import { AudioEngine } from '../audio/audioEngine.js';
+import { AudioEngine, getPresetSteps } from '../audio/audioEngine.js';
 import { RhythmEngine } from '../audio/rhythmEngine.js';
 import {
   renderVerticalChordSVG,
@@ -19,6 +19,7 @@ import {
 import { ExportTools } from '../ui/exportTools.js';
 import { icon } from '../ui/icons.js';
 import { renderPlaybackControlsHTML, bindPlaybackControls, highlightStrumStep } from '../ui/playbackBar.js';
+import { renderStageCadenceBoxHTML } from '../ui/strummingEditor.js';
 
 export const ModChords = {
   id: 'chords',
@@ -364,7 +365,8 @@ export const ModChords = {
                     ${v.caged ? `<span class="caged-dot" style="background:${Theory.getCagedColor(v.caged)}">${v.caged}</span>` : ''}
                   </div>
                   ${renderVerticalChordSVG(v, { compact: false })}
-                  <div class="small muted-text">${v.label}</div>
+                  <div class="small muted-text" style="margin-bottom:6px;">${v.label}</div>
+                  ${renderStageCadenceBoxHTML(getPresetSteps(AudioEngine.chordCadence), { activeStep: -1, cardKey: String(idx) })}
                 </div>
               `).join('')}
             </div>
@@ -533,6 +535,17 @@ export const ModChords = {
             bpm: RhythmEngine.bpm,
             cadence: AudioEngine.chordCadence,
             loop: false,
+            onBeatStep: (stepIdx) => {
+              container.querySelectorAll('.stage-cadence-box').forEach((box) => {
+                const isTarget = box.dataset.stageCadKey === String(idx);
+                box.querySelectorAll('.mini-strum-cell').forEach((cell) => {
+                  cell.classList.toggle('is-now', isTarget && Number(cell.dataset.msStep) === stepIdx);
+                });
+              });
+            },
+            onEnd: () => {
+              container.querySelectorAll('.mini-strum-cell').forEach((c) => c.classList.remove('is-now'));
+            },
           });
         }
         container.querySelectorAll('.stage-ch-play').forEach((el, i) => el.classList.toggle('playing', i === idx));

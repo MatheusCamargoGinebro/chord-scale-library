@@ -4,7 +4,7 @@
  * and falls back seamlessly to cached assets when offline.
  */
 
-const CACHE_NAME = 'chord-scale-library-v4';
+const CACHE_NAME = 'chord-scale-library-v6';
 const ASSETS = [
   './',
   './index.html',
